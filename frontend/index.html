@@ -4,24 +4,270 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YapSearch - Semantic Group Chat Search</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #1c1e21; }
-        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .search-box { display: flex; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
-        .search-input { flex-grow: 1; padding: 15px 20px; border: none; font-size: 16px; outline: none; }
-        .search-btn { padding: 15px 25px; background-color: #1877f2; color: white; border: none; font-size: 16px; cursor: pointer; font-weight: bold; }
-        .search-btn:hover { background-color: #166fe5; }
+        :root {
+            --bg-color: #09090b;
+            --text-primary: #ededed;
+            --text-secondary: #a1a1aa;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            --accent-glow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-primary); 
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+            background-attachment: fixed;
+        }
+
+        .container { 
+            max-width: 850px; 
+            margin: 0 auto; 
+            padding: 60px 20px; 
+        }
+
+        .header { 
+            text-align: center; 
+            margin-bottom: 50px; 
+            animation: fadeIn 1s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 2px 10px rgba(59, 130, 246, 0.2));
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.15rem;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .search-box { 
+            display: flex; 
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px; 
+            padding: 8px;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-box:focus-within {
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .search-input { 
+            flex-grow: 1; 
+            padding: 16px 24px; 
+            border: none; 
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 1.1rem; 
+            outline: none; 
+            font-family: inherit;
+        }
+
+        .search-input::placeholder {
+            color: #52525b;
+            font-weight: 300;
+        }
+
+        .search-btn { 
+            padding: 15px 35px; 
+            background: var(--accent-gradient);
+            color: white; 
+            border: none; 
+            border-radius: 12px;
+            font-size: 1rem; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 120px;
+        }
+
+        .search-btn:hover { 
+            transform: translateY(-1px) scale(1.02);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
         
-        .results-info { margin-top: 20px; font-size: 14px; color: #606770; }
-        .result-card { background: white; border-radius: 8px; padding: 20px; margin-top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .message-main { border-left: 4px solid #1877f2; padding-left: 15px; margin: 15px 0; }
-        .message-context { color: #606770; font-size: 14px; padding: 5px 0; border-left: 4px solid #e4e6eb; padding-left: 15px; margin: 5px 0; }
-        .sender { font-weight: bold; color: #1c1e21; }
-        .timestamp { font-size: 12px; color: #8d949e; margin-left: 10px; }
-        .sim-score { float: right; font-size: 12px; background: #e7f3ff; color: #1877f2; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
-        
-        .parsed-info { display: inline-block; background: #e4e6eb; padding: 5px 10px; border-radius: 12px; margin-right: 10px; margin-top: 10px; font-size: 12px;}
+        .search-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .results-info { 
+            margin-top: 30px; 
+            font-size: 0.95rem; 
+            color: var(--text-secondary); 
+            text-align: center;
+            min-height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .parsed-info { 
+            display: inline-flex; 
+            align-items: center;
+            background: rgba(139, 92, 246, 0.1); 
+            color: #c4b5fd;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .result-card { 
+            background: var(--glass-bg); 
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px; 
+            padding: 24px; 
+            margin-top: 24px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            animation: slideUpFade 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+
+        .sim-score { 
+            font-size: 0.85rem; 
+            background: rgba(139, 92, 246, 0.15); 
+            color: #ddd6fe; 
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-weight: 600; 
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(139, 92, 246, 0.1);
+        }
+
+        .thread {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sender-header {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 4px;
+            padding-left: 2px;
+        }
+
+        .sender { 
+            font-weight: 600; 
+            color: #e4e4e7; 
+            font-size: 0.95rem;
+        }
+
+        .timestamp { 
+            font-size: 0.75rem; 
+            color: #71717a; 
+            font-weight: 400;
+        }
+
+        .bubble {
+            padding: 14px 18px;
+            border-radius: 16px;
+            max-width: 90%;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            position: relative;
+        }
+
+        .bubble-context { 
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary); 
+            align-self: flex-start;
+            border-top-left-radius: 4px;
+        }
+
+        .bubble-main { 
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #ffffff;
+            align-self: flex-start;
+            border-top-left-radius: 4px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.08);
+            font-weight: 500;
+        }
+
+        /* Animations */
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
     </style>
 </head>
 <body>
@@ -34,7 +280,7 @@
     
     <div class="search-box">
         <input type="text" id="queryInput" class="search-input" placeholder="Search the group chat (e.g. What did Priya say about the budget?)" onkeypress="handleKeyPress(event)">
-        <button class="search-btn" onclick="performSearch()">Search</button>
+        <button id="searchBtn" class="search-btn" onclick="performSearch()">Search</button>
     </div>
     
     <div id="resultsInfo" class="results-info"></div>
@@ -43,13 +289,16 @@
 
 <script>
     async function performSearch() {
-        const query = document.getElementById('queryInput').value.trim();
+        const queryInput = document.getElementById('queryInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const query = queryInput.value.trim();
         if (!query) return;
         
         const resultsInfo = document.getElementById('resultsInfo');
         const resultsContainer = document.getElementById('resultsContainer');
         
-        resultsInfo.innerHTML = "Searching...";
+        resultsInfo.innerHTML = "<span>Searching...</span>";
+        searchBtn.innerHTML = "<div class='loader'></div>";
         resultsContainer.innerHTML = "";
         
         try {
@@ -60,39 +309,55 @@
             });
             
             const data = await response.json();
+            searchBtn.innerHTML = "Search";
             
-            let parsedHtml = '';
+            let parsedHtml = `<span>Found ${data.results.length} results.</span>`;
             if (data.parsed.speaker) parsedHtml += `<span class="parsed-info">👤 Speaker: ${data.parsed.speaker}</span>`;
             if (data.parsed.date_range) parsedHtml += `<span class="parsed-info">📅 Dates: ${data.parsed.date_range[0].split('T')[0]} to ${data.parsed.date_range[1].split('T')[0]}</span>`;
             
-            resultsInfo.innerHTML = `Found ${data.results.length} results. ${parsedHtml}`;
+            resultsInfo.innerHTML = parsedHtml;
             
-            data.results.forEach(res => {
+            data.results.forEach((res, index) => {
                 const card = document.createElement('div');
                 card.className = 'result-card';
+                card.style.animationDelay = `${index * 0.1}s`;
                 
                 // Separate before and after context
                 const beforeContext = res.context.filter(c => c.timestamp < res.timestamp);
                 const afterContext = res.context.filter(c => c.timestamp > res.timestamp);
                 
-                let html = `<div class="sim-score">Sim: ${(res.similarity * 100).toFixed(1)}%</div>`;
+                let html = `<div class="card-header"><div class="sim-score">Match: ${(res.similarity * 100).toFixed(1)}%</div></div><div class="thread">`;
                 
                 beforeContext.forEach(c => {
-                    html += `<div class="message-context"><span class="sender">${c.sender}</span> <span class="timestamp">${formatDate(c.timestamp)}</span><br>${c.text}</div>`;
+                    html += `
+                    <div class="message-group">
+                        <div class="sender-header"><span class="sender">${c.sender}</span><span class="timestamp">${formatDate(c.timestamp)}</span></div>
+                        <div class="bubble bubble-context">${c.text}</div>
+                    </div>`;
                 });
                 
-                html += `<div class="message-main"><span class="sender">${res.sender}</span> <span class="timestamp">${formatDate(res.timestamp)}</span><br>${res.text}</div>`;
+                html += `
+                    <div class="message-group">
+                        <div class="sender-header"><span class="sender" style="color: #60a5fa;">${res.sender}</span><span class="timestamp">${formatDate(res.timestamp)}</span></div>
+                        <div class="bubble bubble-main">${res.text}</div>
+                    </div>`;
                 
                 afterContext.forEach(c => {
-                    html += `<div class="message-context"><span class="sender">${c.sender}</span> <span class="timestamp">${formatDate(c.timestamp)}</span><br>${c.text}</div>`;
+                    html += `
+                    <div class="message-group">
+                        <div class="sender-header"><span class="sender">${c.sender}</span><span class="timestamp">${formatDate(c.timestamp)}</span></div>
+                        <div class="bubble bubble-context">${c.text}</div>
+                    </div>`;
                 });
                 
+                html += `</div>`;
                 card.innerHTML = html;
                 resultsContainer.appendChild(card);
             });
             
         } catch (e) {
-            resultsInfo.innerHTML = "<span style='color:red'>Error performing search. Is the backend running?</span>";
+            resultsInfo.innerHTML = "<span style='color:#ef4444'>Error performing search. Is the backend running?</span>";
+            searchBtn.innerHTML = "Search";
             console.error(e);
         }
     }
