@@ -1,0 +1,242 @@
+[
+  {
+    "query": "What food did Simran order?",
+    "expected_message_id": "msg_82391_b06137",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Who got the highest marks?",
+    "expected_message_id": "msg_69654_2650c8",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "What did Aman say about his phone?",
+    "expected_message_id": "msg_21837_3f8653",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Where are we meeting for project work?",
+    "expected_message_id": "msg_54061_377af8",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "When did we finally decide on the trip?",
+    "expected_message_id": "msg_36050_f0ff3a",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "What was Priya's idea?",
+    "expected_message_id": "msg_32966_237d97",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Did Rohit submit the file?",
+    "expected_message_id": "msg_20058_548522",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "What was the issue in May?",
+    "expected_message_id": "msg_85001_eeba7d",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "Which movie to watch?",
+    "expected_message_id": "msg_29335_2d63c9",
+    "type": "semantic",
+    "zero_overlap": false
+  },
+  {
+    "query": "Is it raining?",
+    "expected_message_id": "msg_19676_5204e8",
+    "type": "semantic",
+    "zero_overlap": false
+  },
+  {
+    "query": "What are we gifting him?",
+    "expected_message_id": "msg_87644_34f696",
+    "type": "semantic",
+    "zero_overlap": false
+  },
+  {
+    "query": "Why was Neha angry?",
+    "expected_message_id": "msg_50376_b0c7f2",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Is anyone bringing a car?",
+    "expected_message_id": "msg_94986_1ad18c",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "Where does Rahul want to eat?",
+    "expected_message_id": "msg_43829_4f2a67",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Who is paying for the dinner bill?",
+    "expected_message_id": "msg_34469_0dcaa5",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "Where did Rahul travel in June?",
+    "expected_message_id": "msg_23356_1fe0d7",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "What time is the class?",
+    "expected_message_id": "msg_21874_a66636",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "What did someone say in June about the fest?",
+    "expected_message_id": "msg_27566_e4a81c",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "Where is Ananya going for her internship?",
+    "expected_message_id": "msg_45895_7c3ba0",
+    "type": "attributed",
+    "zero_overlap": true
+  },
+  {
+    "query": "What did Karan say about the match?",
+    "expected_message_id": "msg_43743_47da6f",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "What did Aman say about budget in July?",
+    "expected_message_id": "msg_75362_644af0",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Is the assignment difficult?",
+    "expected_message_id": "msg_20924_f7980f",
+    "type": "semantic",
+    "zero_overlap": false
+  },
+  {
+    "query": "Any updates on college reopening in July?",
+    "expected_message_id": "msg_29142_9acc7b",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "Are we playing cricket today?",
+    "expected_message_id": "msg_27025_e84c60",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "Did Karan find his keys?",
+    "expected_message_id": "msg_91685_f82866",
+    "type": "attributed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Did the professor cancel the test?",
+    "expected_message_id": "msg_83673_2674b5",
+    "type": "semantic",
+    "zero_overlap": true
+  },
+  {
+    "query": "What did Priya say about the budget?",
+    "expected_message_id": "msg_13018_0e29a4",
+    "type": "attributed",
+    "zero_overlap": true
+  },
+  {
+    "query": "What was Priya's suggestion in July?",
+    "expected_message_id": "msg_84275_2f3f7b",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Did we play any games last month?",
+    "expected_message_id": "msg_19063_60c34f",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "What did Karan buy last month?",
+    "expected_message_id": "msg_27647_5d3ebd",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Did Aman talk about movies last month?",
+    "expected_message_id": "msg_41151_294581",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "What did we discuss last month?",
+    "expected_message_id": "msg_75104_0ccf8b",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "What was Priya's excuse last week?",
+    "expected_message_id": "msg_95937_2a0906",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "What was planned last week?",
+    "expected_message_id": "msg_63322_ae3363",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "Did Rohit say anything about exams last week?",
+    "expected_message_id": "msg_66004_261f48",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Who wished happy birthday yesterday?",
+    "expected_message_id": "msg_97312_2402b8",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "What did Simran say about the presentation yesterday?",
+    "expected_message_id": "msg_23031_aeda22",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Who sent the funny meme yesterday?",
+    "expected_message_id": "msg_64073_378ed8",
+    "type": "temporal",
+    "zero_overlap": false
+  },
+  {
+    "query": "What did Neha say yesterday?",
+    "expected_message_id": "msg_73624_63641d",
+    "type": "mixed",
+    "zero_overlap": false
+  },
+  {
+    "query": "Did Ananya submit the form yesterday?",
+    "expected_message_id": "msg_96698_70e096",
+    "type": "mixed",
+    "zero_overlap": false
+  }
+]

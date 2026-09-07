@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YapSearch - Semantic Group Chat Search</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; color: #1c1e21; }
+        .container { max-width: 800px; margin: 40px auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .search-box { display: flex; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
+        .search-input { flex-grow: 1; padding: 15px 20px; border: none; font-size: 16px; outline: none; }
+        .search-btn { padding: 15px 25px; background-color: #1877f2; color: white; border: none; font-size: 16px; cursor: pointer; font-weight: bold; }
+        .search-btn:hover { background-color: #166fe5; }
+        
+        .results-info { margin-top: 20px; font-size: 14px; color: #606770; }
+        .result-card { background: white; border-radius: 8px; padding: 20px; margin-top: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .message-main { border-left: 4px solid #1877f2; padding-left: 15px; margin: 15px 0; }
+        .message-context { color: #606770; font-size: 14px; padding: 5px 0; border-left: 4px solid #e4e6eb; padding-left: 15px; margin: 5px 0; }
+        .sender { font-weight: bold; color: #1c1e21; }
+        .timestamp { font-size: 12px; color: #8d949e; margin-left: 10px; }
+        .sim-score { float: right; font-size: 12px; background: #e7f3ff; color: #1877f2; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+        
+        .parsed-info { display: inline-block; background: #e4e6eb; padding: 5px 10px; border-radius: 12px; margin-right: 10px; margin-top: 10px; font-size: 12px;}
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>YapSearch</h1>
+        <p>Semantic Group Chat Search Engine</p>
+    </div>
+    
+    <div class="search-box">
+        <input type="text" id="queryInput" class="search-input" placeholder="Search the group chat (e.g. What did Priya say about the budget?)" onkeypress="handleKeyPress(event)">
+        <button class="search-btn" onclick="performSearch()">Search</button>
+    </div>
+    
+    <div id="resultsInfo" class="results-info"></div>
+    <div id="resultsContainer"></div>
+</div>
+
+<script>
+    async function performSearch() {
+        const query = document.getElementById('queryInput').value.trim();
+        if (!query) return;
+        
+        const resultsInfo = document.getElementById('resultsInfo');
+        const resultsContainer = document.getElementById('resultsContainer');
+        
+        resultsInfo.innerHTML = "Searching...";
+        resultsContainer.innerHTML = "";
+        
+        try {
+            const response = await fetch('/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            
+            const data = await response.json();
+            
+            let parsedHtml = '';
+            if (data.parsed.speaker) parsedHtml += `<span class="parsed-info">👤 Speaker: ${data.parsed.speaker}</span>`;
+            if (data.parsed.date_range) parsedHtml += `<span class="parsed-info">📅 Dates: ${data.parsed.date_range[0].split('T')[0]} to ${data.parsed.date_range[1].split('T')[0]}</span>`;
+            
+            resultsInfo.innerHTML = `Found ${data.results.length} results. ${parsedHtml}`;
+            
+            data.results.forEach(res => {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                
+                // Separate before and after context
+                const beforeContext = res.context.filter(c => c.timestamp < res.timestamp);
+                const afterContext = res.context.filter(c => c.timestamp > res.timestamp);
+                
+                let html = `<div class="sim-score">Sim: ${(res.similarity * 100).toFixed(1)}%</div>`;
+                
+                beforeContext.forEach(c => {
+                    html += `<div class="message-context"><span class="sender">${c.sender}</span> <span class="timestamp">${formatDate(c.timestamp)}</span><br>${c.text}</div>`;
+                });
+                
+                html += `<div class="message-main"><span class="sender">${res.sender}</span> <span class="timestamp">${formatDate(res.timestamp)}</span><br>${res.text}</div>`;
+                
+                afterContext.forEach(c => {
+                    html += `<div class="message-context"><span class="sender">${c.sender}</span> <span class="timestamp">${formatDate(c.timestamp)}</span><br>${c.text}</div>`;
+                });
+                
+                card.innerHTML = html;
+                resultsContainer.appendChild(card);
+            });
+            
+        } catch (e) {
+            resultsInfo.innerHTML = "<span style='color:red'>Error performing search. Is the backend running?</span>";
+            console.error(e);
+        }
+    }
+    
+    function formatDate(isoString) {
+        const d = new Date(isoString);
+        return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+    }
+
+    function handleKeyPress(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    }
+</script>
+
+</body>
+</html>
