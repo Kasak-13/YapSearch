@@ -38,44 +38,57 @@ class SearchCore:
         speaker = None
         date_range = None
         
+        semantic_query = query
+        
         # 1. Speaker detection
         q_lower = query.lower()
         for p in PARTICIPANTS:
             if re.search(rf"\b{p.lower()}\b", q_lower):
                 speaker = p
+                # Strip the speaker name from the query (case insensitive)
+                semantic_query = re.sub(rf"(?i)\b{p}\b", "", semantic_query)
                 break
                 
         # 2. Date parsing (Rule-based)
         start_date = None
         end_date = None
         
-        if "last month" in q_lower:
-            start_date = REFERENCE_DATE.replace(day=1) - relativedelta(months=1)
-            end_date = REFERENCE_DATE.replace(day=1) - relativedelta(seconds=1)
-        elif "this month" in q_lower:
-            start_date = REFERENCE_DATE.replace(day=1)
-            end_date = start_date + relativedelta(months=1) - relativedelta(seconds=1)
-        elif "yesterday" in q_lower:
-            start_date = REFERENCE_DATE - relativedelta(days=1)
-            end_date = start_date + relativedelta(hours=23, minutes=59, seconds=59)
-        elif "last week" in q_lower:
-            # Assuming a generic week offset (7 days prior)
-            start_date = REFERENCE_DATE - relativedelta(days=7)
-            end_date = REFERENCE_DATE
-        elif "in july" in q_lower:
-            start_date = datetime.datetime(2026, 7, 1)
-            end_date = datetime.datetime(2026, 7, 31, 23, 59, 59)
-        elif "in june" in q_lower:
-            start_date = datetime.datetime(2026, 6, 1)
-            end_date = datetime.datetime(2026, 6, 30, 23, 59, 59)
-        elif "in may" in q_lower:
-            start_date = datetime.datetime(2026, 5, 1)
-            end_date = datetime.datetime(2026, 5, 31, 23, 59, 59)
+        time_triggers = ["last month", "this month", "yesterday", "last week", "in july", "in june", "in may"]
+        for trigger in time_triggers:
+            if trigger in q_lower:
+                if trigger == "last month":
+                    start_date = REFERENCE_DATE.replace(day=1) - relativedelta(months=1)
+                    end_date = REFERENCE_DATE.replace(day=1) - relativedelta(seconds=1)
+                elif trigger == "this month":
+                    start_date = REFERENCE_DATE.replace(day=1)
+                    end_date = start_date + relativedelta(months=1) - relativedelta(seconds=1)
+                elif trigger == "yesterday":
+                    start_date = REFERENCE_DATE - relativedelta(days=1)
+                    end_date = start_date + relativedelta(hours=23, minutes=59, seconds=59)
+                elif trigger == "last week":
+                    start_date = REFERENCE_DATE - relativedelta(days=7)
+                    end_date = REFERENCE_DATE
+                elif trigger == "in july":
+                    start_date = datetime.datetime(2026, 7, 1)
+                    end_date = datetime.datetime(2026, 7, 31, 23, 59, 59)
+                elif trigger == "in june":
+                    start_date = datetime.datetime(2026, 6, 1)
+                    end_date = datetime.datetime(2026, 6, 30, 23, 59, 59)
+                elif trigger == "in may":
+                    start_date = datetime.datetime(2026, 5, 1)
+                    end_date = datetime.datetime(2026, 5, 31, 23, 59, 59)
+                
+                # Strip the time trigger from the query (case insensitive)
+                semantic_query = re.sub(rf"(?i)\b{trigger}\b", "", semantic_query)
+                break
 
         if start_date and end_date:
             date_range = (start_date, end_date)
             
-        return query, speaker, date_range
+        # Clean up extra spaces left behind by stripping
+        semantic_query = re.sub(r'\s+', ' ', semantic_query).strip()
+            
+        return semantic_query, speaker, date_range
 
     def get_boolean_mask(self, speaker, date_range):
         mask = np.ones(len(self.messages), dtype=bool)
