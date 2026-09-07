@@ -131,8 +131,11 @@ class SearchCore:
         # Z-score normalize context
         sim_context_z = (sim_context - np.mean(sim_context)) / (np.std(sim_context) + 1e-10)
         
-        # Hybrid score
-        similarities = (0.6 * sim_raw_z) + (0.4 * sim_context_z)
+        # Hybrid score (Z-scores are typically -3 to +3)
+        hybrid_z = (0.6 * sim_raw_z) + (0.4 * sim_context_z)
+        
+        # Squash z-scores to 0-1 range for percentage display using sigmoid
+        similarities = 1 / (1 + np.exp(-hybrid_z))
         
         top_k = min(top_k, len(similarities))
         top_local_indices = np.argsort(similarities)[::-1][:top_k]
