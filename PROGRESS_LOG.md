@@ -29,7 +29,7 @@ Status: ✅ Done
 ## Phase 3 — Repo skeleton + embeddings
 Status: ✅ Done
 
-- Embedding model used: all-MiniLM-L6-v2
+- Embedding model used: paraphrase-multilingual-MiniLM-L12-v2
 - Vector file location: data/embeddings.npy
 - Repo structure notes: Standard structure (data/, scripts/, backend/, frontend/)
 - Known issues: None.
