@@ -1,4 +1,6 @@
 venv/
 __pycache__/
 *.npy
+*.zip
+ui_update/
 .DS_Store

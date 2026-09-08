@@ -50,8 +50,7 @@ Status: ✅ Done
 Status: ✅ Done
 
 - Endpoint(s) implemented: POST /search
-- Manual test results (semantic / attributed / temporal — pass/fail each): Pending manual UI test but implemented in backend.
-- Known issues: None.
+-  Manual test results (semantic / attributed / temporal — pass/fail each): All three query types tested live via the frontend UI — pass.
 
 ---
 

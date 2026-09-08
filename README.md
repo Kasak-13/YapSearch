@@ -113,7 +113,6 @@ YapSearch/
 ```
 
 ---
-
 ## ⚠️ Known Limitations & Future Work
 
 1. **Corpus vs. Eval Strictness**: The synthetic corpus was lightly adjusted for narrative coherence around eval targets after the initial eval set generation (injecting relevant preceding chat context for zero-overlap targets). Therefore, the evaluation numbers should be read as indicative of the technique's potential rather than performance on a fully held-out, independent dataset.

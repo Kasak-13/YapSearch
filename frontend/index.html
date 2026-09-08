@@ -1,378 +1,313 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YapSearch - Semantic Group Chat Search</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-color: #09090b;
-            --text-primary: #ededed;
-            --text-secondary: #a1a1aa;
-            --glass-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            --accent-glow: 0 0 20px rgba(139, 92, 246, 0.3);
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YapSearch — WhatsApp Search</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+:root{--green:#00a884;--dark-green:#008069;--header:#202c33;--panel:#111b21;--chat:#0b141a;--bubble:#202c33;--bubble-main:#005c4b;--text:#e9edef;--muted:#8696a0;--border:#26343b;--search:#202c33}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:"Inter",Arial,Helvetica,sans-serif;background:#111;color:var(--text);overflow:hidden}
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(#00a884 0 127px,#d9dbd5 127px 100%);z-index:-2}
+.app{width:min(1400px,100vw);height:min(920px,100vh);margin:auto;background:var(--panel);display:grid;grid-template-columns:360px 1fr;box-shadow:0 8px 30px rgba(0,0,0,.35);overflow:hidden;min-height:0}
+.sidebar{background:#111b21;border-right:1px solid #313d43;display:flex;flex-direction:column;min-width:0}
+.sidebar-head{height:60px;background:#202c33;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.brand{display:flex;align-items:center;gap:11px;font-weight:600;font-size:19px}.brand-mark{width:36px;height:36px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#fff;font-size:18px;font-weight:700}.head-icons{display:flex;gap:20px;color:#aebac1;font-size:20px}
+.search-wrap{padding:8px 12px;background:#111b21}.search{height:42px;background:#202c33;border-radius:8px;display:flex;align-items:center;padding:0 13px;gap:12px;color:#8696a0}.search svg{width:18px}.search input{width:100%;border:0;outline:0;background:transparent;color:#dfe5e7;font-size:14px}.search input::placeholder{color:#8696a0}
+.chat-list{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0}.chat-item{display:flex;align-items:center;gap:13px;padding:12px 16px;border-top:1px solid rgba(134,150,160,.08);cursor:pointer}.chat-item:hover{background:#202c33}.chat-avatar{width:49px;height:49px;border-radius:50%;background:#54656f;display:grid;place-items:center;font-weight:600;color:#fff;flex:none}.chat-copy{min-width:0;flex:1}.chat-title{display:flex;justify-content:space-between;gap:10px}.chat-title strong{font-size:16px;font-weight:500}.chat-time{font-size:12px;color:#8696a0}.chat-preview{font-size:13px;color:#8696a0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;background:#0b141a}.main-head{height:60px;background:#202c33;display:flex;align-items:center;padding:0 18px;gap:13px;border-bottom:1px solid #26343b}.group-avatar{width:42px;height:42px;border-radius:50%;background:#54656f;display:grid;place-items:center;font-size:20px}.group-info{flex:1;min-width:0}.group-name{font-size:16px;font-weight:500}.group-sub{font-size:12px;color:#8696a0;margin-top:3px}.main-actions{display:flex;gap:22px;color:#aebac1;font-size:19px}
+.search-panel{padding:15px 18px;background:#111b21;border-bottom:1px solid #26343b}.searchbar-main{height:48px;background:#202c33;border-radius:9px;display:flex;align-items:center;padding:0 6px 0 15px;gap:10px}.searchbar-main input{flex:1;border:0;outline:0;background:transparent;color:#e9edef;font-size:15px}.searchbar-main input::placeholder{color:#8696a0}.search-button{height:38px;padding:0 20px;border:0;border-radius:7px;background:var(--green);color:#fff;font-weight:600;cursor:pointer}.search-button:hover{background:#06b894}.search-button:active{transform:scale(.98)}
+.meta{min-height:40px;padding:9px 18px;background:#111b21;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#8696a0;font-size:12px;border-bottom:1px solid #26343b}.pill{background:#1f3430;color:#b8e8dc;border:1px solid #28534b;border-radius:14px;padding:5px 10px}
+.results{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:22px 5%;background-color:#0b141a;background-image:radial-gradient(rgba(134,150,160,.045) 1px,transparent 1px);background-size:18px 18px}.empty{text-align:center;color:#8696a0;margin-top:15vh}.empty .empty-icon{width:74px;height:74px;border-radius:50%;margin:0 auto 18px;background:#202c33;display:grid;place-items:center;font-size:32px}.empty h2{font-size:19px;color:#dfe5e7;font-weight:400;margin-bottom:8px}.empty p{font-size:13px;line-height:1.6;max-width:430px;margin:auto}
+.result{max-width:900px;margin:0 auto 24px;animation:appear .25s ease both}.result-top{display:flex;justify-content:center;margin-bottom:10px}.match{font-size:11px;background:#182229;color:#aeb6c1;padding:5px 9px;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.2)}.thread{display:flex;flex-direction:column;gap:3px}.date-divider{text-align:center;margin:8px 0}.date-divider span{font-size:11px;background:#182229;color:#8696a0;padding:5px 10px;border-radius:7px;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.msg{display:flex;flex-direction:column;max-width:76%;align-items:flex-start}.msg.self{align-self:flex-end;align-items:flex-end}.msg-name{font-size:12px;color:#53bdeb;margin:0 10px 2px}.msg-name.context-name{color:#d18bff}.bubble{position:relative;padding:7px 9px 18px;background:var(--bubble);border-radius:7px;color:#e9edef;font-size:14px;line-height:1.45;box-shadow:0 1px 1px rgba(0,0,0,.2);min-width:90px}.msg.self .bubble{background:#005c4b}.bubble:before{content:"";position:absolute;top:0;left:-7px;border-style:solid;border-width:0 8px 8px 0;border-color:transparent var(--bubble) transparent transparent}.msg.self .bubble:before{left:auto;right:-7px;border-width:0 0 8px 8px;border-color:transparent transparent transparent #005c4b}.context .bubble{color:#c5cdd1}.target .bubble{background:#006d5b;box-shadow:0 0 0 2px rgba(0,168,132,.22),0 2px 8px rgba(0,0,0,.22)}.target .bubble:before{border-right-color:#006d5b}.target .msg-name{color:#6ed7c1;font-weight:600}.msg-time{position:absolute;right:8px;bottom:3px;font-size:10px;color:#8696a0}.target .msg-time{color:#a5d8cf}.result-label{display:inline-block;font-size:10px;color:#9de1d1;background:#16483f;border-radius:4px;padding:2px 5px;margin:0 10px 3px}
+.clickable{cursor:pointer}.clickable:focus-visible{outline:2px solid var(--green);outline-offset:-2px}.chat-item.active{background:#202c33}.chat-item.active .chat-title strong{color:#fff}.head-icon-btn{background:transparent;border:0;color:#aebac1;font-size:20px;cursor:pointer;padding:4px;border-radius:6px}.head-icon-btn:hover{background:#2a3941;color:#fff}.search-icon-btn{background:transparent;border:0;color:#8696a0;cursor:pointer;font-size:18px;padding:2px}.search-icon-btn:hover{color:#dfe5e7}.sidebar-filter{transition:background .15s}.sidebar-filter:focus{background:#26343b}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#202c33;color:#e9edef;padding:9px 14px;border-radius:8px;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.35);z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}.toast.show{opacity:1}.loader{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}@keyframes appear{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:#37474f;border-radius:8px}::-webkit-scrollbar-track{background:transparent}
+/* Premium styling, spacious layout & match highlighting */
+:root {
+  --primary: #00a884;
+  --primary-glow: rgba(0, 168, 132, 0.35);
+  --matched-bg: linear-gradient(135deg, #005c4b 0%, #02735e 100%);
+  --matched-border: #25d366;
+  --context-bg: #202c33;
+  --card-bg: rgba(18, 27, 34, 0.9);
+  --card-border: rgba(134, 150, 160, 0.18);
+}
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+.results {
+  padding: 24px 6% 40px !important;
+}
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-color); 
-            color: var(--text-primary); 
-            min-height: 100vh;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
-            background-attachment: fixed;
-        }
+.result-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin: 0 auto 28px;
+  max-width: 860px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  animation: fadeIn 0.35s ease both;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
 
-        .container { 
-            max-width: 850px; 
-            margin: 0 auto; 
-            padding: 60px 20px; 
-        }
+.result-card:hover {
+  border-color: rgba(37, 211, 102, 0.3);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
 
-        .header { 
-            text-align: center; 
-            margin-bottom: 50px; 
-            animation: fadeIn 1s ease-out;
-        }
+/* Card Header & Highlighted Match Percentage */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
 
-        .header h1 {
-            font-size: 3.5rem;
-            font-weight: 700;
-            letter-spacing: -1.5px;
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
-            filter: drop-shadow(0 2px 10px rgba(59, 130, 246, 0.2));
-        }
+.card-title-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8696a0;
+  font-size: 13px;
+}
 
-        .header p {
-            color: var(--text-secondary);
-            font-size: 1.15rem;
-            font-weight: 300;
-            letter-spacing: 0.5px;
-        }
+.sim-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(0, 168, 132, 0.22) 0%, rgba(37, 211, 102, 0.12) 100%);
+  border: 1px solid rgba(37, 211, 102, 0.55);
+  color: #25d366;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: 0.3px;
+  box-shadow: 0 0 16px rgba(37, 211, 102, 0.25);
+}
 
-        .search-box { 
-            display: flex; 
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px; 
-            padding: 8px;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 10;
-        }
+.sim-score-badge .score-icon {
+  font-size: 14px;
+}
 
-        .search-box:focus-within {
-            border-color: rgba(139, 92, 246, 0.5);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4), var(--accent-glow);
-            transform: translateY(-2px);
-        }
+/* Thread Spacing & Messages */
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* decongested space between messages */
+}
 
-        .search-input { 
-            flex-grow: 1; 
-            padding: 16px 24px; 
-            border: none; 
-            background: transparent;
-            color: var(--text-primary);
-            font-size: 1.1rem; 
-            outline: none; 
-            font-family: inherit;
-        }
+.message-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-        .search-input::placeholder {
-            color: #52525b;
-            font-weight: 300;
-        }
+.sender-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  font-size: 12.5px;
+}
 
-        .search-btn { 
-            padding: 15px 35px; 
-            background: var(--accent-gradient);
-            color: white; 
-            border: none; 
-            border-radius: 12px;
-            font-size: 1rem; 
-            cursor: pointer; 
-            font-weight: 600; 
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 120px;
-        }
+.sender {
+  font-weight: 600;
+  color: #53bdeb;
+}
 
-        .search-btn:hover { 
-            transform: translateY(-1px) scale(1.02);
-            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-        }
-        
-        .search-btn:active {
-            transform: translateY(1px) scale(0.98);
-        }
+.timestamp {
+  color: #8696a0;
+  font-size: 11.5px;
+}
 
-        .results-info { 
-            margin-top: 30px; 
-            font-size: 0.95rem; 
-            color: var(--text-secondary); 
-            text-align: center;
-            min-height: 30px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
+/* Context Bubble */
+.bubble-context {
+  background: var(--context-bg);
+  color: #d1d7db;
+  padding: 10px 14px;
+  border-radius: 8px 12px 12px 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
 
-        .parsed-info { 
-            display: inline-flex; 
-            align-items: center;
-            background: rgba(139, 92, 246, 0.1); 
-            color: #c4b5fd;
-            border: 1px solid rgba(139, 92, 246, 0.2);
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-weight: 500;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            animation: fadeIn 0.4s ease-out;
-        }
+/* Matched Message Highlight */
+.matched-group {
+  position: relative;
+  background: rgba(0, 92, 75, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(37, 211, 102, 0.12);
+}
 
-        .result-card { 
-            background: var(--glass-bg); 
-            border: 1px solid var(--glass-border);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 16px; 
-            padding: 24px; 
-            margin-top: 24px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
-            animation: slideUpFade 0.5s ease-out forwards;
-            opacity: 0;
-            transform: translateY(20px);
-        }
+.matched-pill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(37, 211, 102, 0.2);
+  border: 1px solid rgba(37, 211, 102, 0.4);
+  color: #25d366;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  width: fit-content;
+}
 
-        .card-header {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 16px;
-        }
+.matched-group .sender {
+  color: #25d366 !important;
+  font-weight: 700;
+  font-size: 13.5px;
+}
 
-        .sim-score { 
-            font-size: 0.85rem; 
-            background: rgba(139, 92, 246, 0.15); 
-            color: #ddd6fe; 
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-weight: 600; 
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 10px rgba(139, 92, 246, 0.1);
-        }
+.bubble-main {
+  background: var(--matched-bg);
+  color: #ffffff;
+  padding: 12px 16px;
+  border-radius: 8px 12px 12px 10px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  border: 1px solid var(--matched-border);
+  box-shadow: 0 4px 16px rgba(0, 92, 75, 0.4), 0 0 12px rgba(37, 211, 102, 0.2);
+}
 
-        .thread {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
+.bubble-main strong {
+  color: #e9edef;
+}
 
-        .message-group {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .sender-header {
-            display: flex;
-            align-items: baseline;
-            gap: 10px;
-            margin-bottom: 4px;
-            padding-left: 2px;
-        }
-
-        .sender { 
-            font-weight: 600; 
-            color: #e4e4e7; 
-            font-size: 0.95rem;
-        }
-
-        .timestamp { 
-            font-size: 0.75rem; 
-            color: #71717a; 
-            font-weight: 400;
-        }
-
-        .bubble {
-            padding: 14px 18px;
-            border-radius: 16px;
-            max-width: 90%;
-            line-height: 1.5;
-            font-size: 0.95rem;
-            position: relative;
-        }
-
-        .bubble-context { 
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            color: var(--text-secondary); 
-            align-self: flex-start;
-            border-top-left-radius: 4px;
-        }
-
-        .bubble-main { 
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            color: #ffffff;
-            align-self: flex-start;
-            border-top-left-radius: 4px;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.08);
-            font-weight: 500;
-        }
-
-        /* Animations */
-        @keyframes slideUpFade {
-            0% { opacity: 0; transform: translateY(30px) scale(0.98); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        @keyframes fadeIn {
-            0% { opacity: 0; }
-            100% { opacity: 1; }
-        }
-
-        .loader {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 0.8s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-    </style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+</style>
 </head>
 <body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="brand"><div class="brand-mark">Y</div><span>YapSearch</span></div>
+      <div class="head-icons"><button class="head-icon-btn" type="button" title="About YapSearch" onclick="showToast('YapSearch · semantic group chat search')">⋮</button></div>
+    </div>
+    <div class="chat-list" id="chatList">
+      <div class="chat-item active" aria-label="College Group">
+        <div class="chat-avatar">G</div>
+        <div class="chat-copy">
+          <div class="chat-title"><strong>College Group</strong><span class="chat-time">6 months</span></div>
+          <div class="chat-preview">8 participants · 5,770 messages</div>
+        </div>
+      </div>
+    </div>
+  </aside>
 
-<div class="container">
-    <div class="header">
-        <h1>YapSearch</h1>
-        <p>Semantic Group Chat Search Engine</p>
-    </div>
-    
-    <div class="search-box">
-        <input type="text" id="queryInput" class="search-input" placeholder="Search the group chat (e.g. What did Priya say about the budget?)" onkeypress="handleKeyPress(event)">
-        <button id="searchBtn" class="search-btn" onclick="performSearch()">Search</button>
-    </div>
-    
-    <div id="resultsInfo" class="results-info"></div>
-    <div id="resultsContainer"></div>
+  <main class="main">
+    <header class="main-head">
+      <div class="group-avatar">👥</div>
+      <div class="group-info">
+        <div class="group-name">College Group</div>
+        <div class="group-sub">Aman, Priya, Rahul, Neha, Rohit, Ananya, Karan, Simran</div>
+      </div>
+      <div class="main-actions">
+        <button class="head-icon-btn" type="button" title="Focus search" onclick="document.getElementById('queryInput').focus()">⌕</button>
+        <button class="head-icon-btn" type="button" title="About search" onclick="showToast('Search by meaning, speaker, or time')">⋮</button>
+      </div>
+    </header>
+    <section class="search-panel">
+      <div class="searchbar-main">
+        <span style="color:#8696a0">⌕</span>
+        <input id="queryInput" autocomplete="off" placeholder="Ask anything..." onkeydown="handleKeyPress(event)">
+        <button id="searchBtn" class="search-button" onclick="performSearch()">Search</button>
+      </div>
+    </section>
+    <div id="resultsInfo" class="meta"><span>Search by meaning, speaker, or time.</span></div>
+    <section id="resultsContainer" class="results">
+      <div class="empty"><div class="empty-icon">⌕</div><h2>Find it in the conversation</h2><p>Try “When did we finally decide on the trip?”, “What did Priya say about the budget?”, or “What did we discuss last month?”</p></div>
+    </section>
+  </main>
 </div>
-
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script>
-    async function performSearch() {
-        const queryInput = document.getElementById('queryInput');
-        const searchBtn = document.getElementById('searchBtn');
-        const query = queryInput.value.trim();
-        if (!query) return;
-        
-        const resultsInfo = document.getElementById('resultsInfo');
-        const resultsContainer = document.getElementById('resultsContainer');
-        
-        resultsInfo.innerHTML = "<span>Searching...</span>";
-        searchBtn.innerHTML = "<div class='loader'></div>";
-        resultsContainer.innerHTML = "";
-        
-        try {
-            const response = await fetch('/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query })
-            });
-            
-            const data = await response.json();
-            searchBtn.innerHTML = "Search";
-            
-            let parsedHtml = `<span>Found ${data.results.length} results.</span>`;
-            if (data.parsed.speaker) parsedHtml += `<span class="parsed-info">👤 Speaker: ${data.parsed.speaker}</span>`;
-            if (data.parsed.date_range) parsedHtml += `<span class="parsed-info">📅 Dates: ${data.parsed.date_range[0].split('T')[0]} to ${data.parsed.date_range[1].split('T')[0]}</span>`;
-            
-            resultsInfo.innerHTML = parsedHtml;
-            
-            data.results.forEach((res, index) => {
-                const card = document.createElement('div');
-                card.className = 'result-card';
-                card.style.animationDelay = `${index * 0.1}s`;
-                
-                // Separate before and after context
-                const beforeContext = res.context.filter(c => c.timestamp < res.timestamp);
-                const afterContext = res.context.filter(c => c.timestamp > res.timestamp);
-                
-                let html = `<div class="card-header"><div class="sim-score">Match: ${(res.similarity * 100).toFixed(1)}%</div></div><div class="thread">`;
-                
-                beforeContext.forEach(c => {
-                    html += `
-                    <div class="message-group">
-                        <div class="sender-header"><span class="sender">${c.sender}</span><span class="timestamp">${formatDate(c.timestamp)}</span></div>
-                        <div class="bubble bubble-context">${c.text}</div>
-                    </div>`;
-                });
-                
-                html += `
-                    <div class="message-group">
-                        <div class="sender-header"><span class="sender" style="color: #60a5fa;">${res.sender}</span><span class="timestamp">${formatDate(res.timestamp)}</span></div>
-                        <div class="bubble bubble-main">${res.text}</div>
-                    </div>`;
-                
-                afterContext.forEach(c => {
-                    html += `
-                    <div class="message-group">
-                        <div class="sender-header"><span class="sender">${c.sender}</span><span class="timestamp">${formatDate(c.timestamp)}</span></div>
-                        <div class="bubble bubble-context">${c.text}</div>
-                    </div>`;
-                });
-                
-                html += `</div>`;
-                card.innerHTML = html;
-                resultsContainer.appendChild(card);
-            });
-            
-        } catch (e) {
-            resultsInfo.innerHTML = "<span style='color:#ef4444'>Error performing search. Is the backend running?</span>";
-            searchBtn.innerHTML = "Search";
-            console.error(e);
-        }
-    }
-    
-    function formatDate(isoString) {
-        const d = new Date(isoString);
-        return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' });
-    }
-
-    function handleKeyPress(e) {
-        if (e.key === 'Enter') {
-            performSearch();
-        }
-    }
+const esc = s => String(s ?? '').replace(/[\u0026\u003c\u003e\"']/g, c => ({'\u0026':'\u0026amp;','\u003c':'\u0026lt;','\u003e':'\u0026gt;','\"':'\u0026quot;',"'":'\u0026#39;'}[c]));
+function formatTime(iso){const d=new Date(iso);return d.toLocaleString([], {hour:'2-digit',minute:'2-digit'});}
+function formatDay(iso){const d=new Date(iso);return d.toLocaleString([], {day:'2-digit',month:'short',year:'numeric'});}
+function formatRange(r){if(!r)return '';return `${r[0].split('T')[0]} → ${r[1].split('T')[0]}`;}
+function sameDay(a,b){return new Date(a).toDateString()===new Date(b).toDateString();}
+function messageHtml(m, target, targetSender){const self = m.sender === targetSender && false; const targetClass=target?' target':''; return `<div class="msg${targetClass}">${target?'<div class="result-label">MATCHED MESSAGE</div>':''}<div class="msg-name ${target?'':'context-name'}">${esc(m.sender)}</div><div class="bubble">${esc(m.text)}<span class="msg-time">${formatTime(m.timestamp)}</span></div></div>`;}
+function showToast(message){const t=document.getElementById('toast');t.textContent=message;t.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove('show'),1800);}
+async function performSearch(){
+  const input=document.getElementById('queryInput'), btn=document.getElementById('searchBtn'), info=document.getElementById('resultsInfo'), container=document.getElementById('resultsContainer');
+  const query=input.value.trim(); if(!query)return;
+  btn.innerHTML='<span class="loader"></span>'; btn.disabled=true; info.innerHTML='<span>Searching the conversation…</span>'; container.innerHTML='';
+  try{
+    const response=await fetch('/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query})});
+    if(!response.ok)throw new Error('Search request failed');
+    const data=await response.json();
+    let meta=`<span>${data.results.length} matching conversations</span>`;
+    if(data.parsed?.speaker)meta+=`<span class="pill">Speaker: ${esc(data.parsed.speaker)}</span>`;
+    if(data.parsed?.date_range)meta+=`<span class="pill">Date: ${esc(formatRange(data.parsed.date_range))}</span>`;
+    info.innerHTML=meta;
+    if(!data.results.length){container.innerHTML='<div class="empty"><div class="empty-icon">⌕</div><h2>No messages found</h2><p>Try a broader question or remove the person/date constraint.</p></div>';return;}
+    data.results.forEach((res,index)=>{
+      const card=document.createElement('div');
+      card.className='result-card';
+      card.style.animationDelay=`${index*0.1}s`;
+      const before=res.context.filter(c=>c.timestamp<res.timestamp);
+      const after=res.context.filter(c=>c.timestamp>res.timestamp);
+      let html=`<div class="card-header">
+        <div class="card-title-meta">
+          <span>💬 Conversation snippet</span>
+        </div>
+        <div class="sim-score-badge">
+          <span class="score-icon">🎯</span>
+          <span>${(res.similarity * 100).toFixed(1)}% Match</span>
+        </div>
+      </div>
+      <div class="thread">`;
+      before.forEach(c => {
+        html += `<div class="message-group">
+          <div class="sender-header">
+            <span class="sender">${esc(c.sender)}</span>
+            <span class="timestamp">${formatDate(c.timestamp)}</span>
+          </div>
+          <div class="bubble bubble-context">${esc(c.text)}</div>
+        </div>`;
+      });
+      html += `<div class="message-group matched-group">
+        <div class="matched-pill-tag">🎯 Matched Message</div>
+        <div class="sender-header">
+          <span class="sender">${esc(res.sender)}</span>
+          <span class="timestamp">${formatDate(res.timestamp)}</span>
+        </div>
+        <div class="bubble bubble-main">${esc(res.text)}</div>
+      </div>`;
+      after.forEach(c => {
+        html += `<div class="message-group">
+          <div class="sender-header">
+            <span class="sender">${esc(c.sender)}</span>
+            <span class="timestamp">${formatDate(c.timestamp)}</span>
+          </div>
+          <div class="bubble bubble-context">${esc(c.text)}</div>
+        </div>`;
+      });
+      html += '</div>';
+      card.innerHTML = html;
+      container.appendChild(card);
+    });
+  }catch(e){info.innerHTML='<span style="color:#f15c6d">Could not search. Make sure the backend is running.</span>'; container.innerHTML='<div class="empty"><div class="empty-icon">!</div><h2>Search unavailable</h2><p>Start the FastAPI backend and try again.</p></div>'; console.error(e);}
+  finally{btn.innerHTML='Search'; btn.disabled=false;}
+}
+function formatDate(isoString){const d=new Date(isoString);return d.toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+function handleKeyPress(e){if(e.key==='Enter')performSearch();}
 </script>
-
 </body>
 </html>

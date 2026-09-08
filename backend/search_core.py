@@ -144,20 +144,21 @@ class SearchCore:
         # Z-score normalize context
         sim_context_z = (sim_context - np.mean(sim_context)) / (np.std(sim_context) + 1e-10)
         
-        # Hybrid score (Z-scores are typically -3 to +3)
+        # Hybrid score for ranking (internal Z-score blend)
         hybrid_z = (0.6 * sim_raw_z) + (0.4 * sim_context_z)
         
-        # Squash z-scores to 0-1 range for percentage display using sigmoid
-        similarities = 1 / (1 + np.exp(-hybrid_z))
+        # Raw blended cosine similarity for display (natural spread, e.g. 0.82, 0.75, 0.68)
+        hybrid_raw = (0.6 * sim_raw) + (0.4 * sim_context)
+        display_scores = np.clip(hybrid_raw, 0.0, 1.0)
         
-        top_k = min(top_k, len(similarities))
-        top_local_indices = np.argsort(similarities)[::-1][:top_k]
+        top_k = min(top_k, len(hybrid_z))
+        top_local_indices = np.argsort(hybrid_z)[::-1][:top_k]
         
         results = []
         for local_idx in top_local_indices:
             global_idx = valid_indices[local_idx]
             msg = self.messages[global_idx]
-            sim_score = float(similarities[local_idx])
+            sim_score = float(display_scores[local_idx])
             context = self.expand_context(global_idx)
             
             results.append({
