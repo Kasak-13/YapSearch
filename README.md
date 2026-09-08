@@ -26,8 +26,23 @@ Built without relying on a bulky vector database, YapSearch uses a pure NumPy de
 - **Backend**: FastAPI
 - **Model**: `paraphrase-multilingual-MiniLM-L12-v2`
 - **Vector Index**: NumPy multidimensional arrays (`embeddings_raw.npy`, `embeddings_context.npy`)
-- **Corpus**: 5,500+ generated synthetic messages stored in JSON
+- **Corpus**: 5,770 synthetic Hinglish chat messages stored in JSON
 - **Frontend**: Vanilla HTML/CSS/JS (Zero framework overhead)
+
+---
+
+## 🎭 What is Simulated vs. Real?
+
+To keep the project self-contained, reproducible, and privacy-safe:
+
+| Component | Status | Details |
+| :--- | :--- | :--- |
+| **Chat Corpus** | **Simulated / Synthetic** | 5,770 messages generated to mimic an authentic, messy college friend group chat in transliterated Hinglish across 8 personas. |
+| **Temporal Anchor** | **Fixed ("Mocked Current Time")** | The reference date `REFERENCE_DATE` is anchored to `September 1, 2026` so temporal queries (`"yesterday"`, `"last month"`) resolve deterministically against the dataset. |
+| **WhatsApp Connection** | **Offline (No Live Meta API)** | Runs locally on structured chat data rather than a live WhatsApp session hook. |
+| **Embeddings & NLP** | **100% Real** | Real local transformer inference using `paraphrase-multilingual-MiniLM-L12-v2` via `sentence-transformers`. |
+| **Search & Ranking** | **100% Real** | Real NumPy dense linear algebra, cosine similarity, hybrid Z-score ranking, and boolean pre-filtering. |
+| **Server & Frontend** | **100% Real** | Real asynchronous FastAPI server serving live endpoints and a responsive, interactive UI. |
 
 ---
 
