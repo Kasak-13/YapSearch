@@ -97,7 +97,14 @@ Status: ✅ Done
 
 ---
 
-## Open issues / things to fix if time allows
-(running list — add as you go)
+## Phase 9 — In-Memory BM25 + Dense Reciprocal Rank Fusion (RRF)
+Status: ✅ Done
 
--
+- Implemented pure Python/NumPy `BM25Okapi` in `backend/bm25.py` with full-corpus global IDF calculation.
+- Integrated Reciprocal Rank Fusion (RRF with $k=60$) pooling Top-100 candidates from both dense semantic and lexical retrievers before fusion.
+- Added comprehensive unit tests in `tests/test_bm25.py` (all 22 suite tests passing).
+- **Benchmark Evaluation Results:**
+  - Recall@1: Increased from 22.5% to **32.5%** (+44.4% relative gain).
+  - Recall@5: Increased from 37.5% to **45.0%** (+20.0% relative gain).
+  - Recall@10: Increased from 37.5% to **45.0%** (+20.0% relative gain).
+

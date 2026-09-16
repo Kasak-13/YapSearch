@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
 ![Sentence Transformers](https://img.shields.io/badge/Sentence_Transformers-F9AB00?style=for-the-badge&logo=huggingface&logoColor=white)
-![Pytest](https://img.shields.io/badge/Pytest-17%20Passed-brightgreen?style=for-the-badge&logo=pytest)
+![Pytest](https://img.shields.io/badge/Pytest-22%20Passed-brightgreen?style=for-the-badge&logo=pytest)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
 YapSearch is a blazing-fast, strictly local semantic search engine tailored for messy, transliterated Hinglish group chats. 
@@ -139,20 +139,23 @@ pytest -v
 
 ## 🧪 Evaluation & Benchmarks
 
-To prove the system works, we generated a punishing 40-query dataset divided into Semantic, Attributed, and Temporal queries. 
+To prove the system works, we evaluated on a punishing 40-query ground-truth dataset divided into Semantic (including strict zero-keyword overlap), Attributed, and Temporal queries. 
 
 Run the automated evaluation suite:
 ```bash
 python scripts/run_eval.py
 ```
 
-**Results:**
-- **Recall@1**: 22.5%
-- **Recall@3**: 32.5%
-- **Recall@5**: 37.5%
-- **Recall@10**: 37.5%
+### 📊 Benchmark Results (Dense vs. Hybrid RRF Fusion)
 
-*Note: These numbers specifically reflect the system's ability to retrieve highly ambiguous, code-mixed short messages and entirely zero-overlap queries.*
+| Metric | Dense-Only Baseline | Hybrid BM25 + Dense RRF | Relative Improvement |
+| :--- | :---: | :---: | :---: |
+| **Recall@1** | 22.5% (9/40) | **32.5% (13/40)** | **+44.4%** 🚀 |
+| **Recall@3** | 32.5% (13/40) | **37.5% (15/40)** | **+15.4%** 🚀 |
+| **Recall@5** | 37.5% (15/40) | **45.0% (18/40)** | **+20.0%** 🚀 |
+| **Recall@10** | 37.5% (15/40) | **45.0% (18/40)** | **+20.0%** 🚀 |
+
+*Key Takeaway: Combining in-memory BM25 lexical token matching with contextual bi-encoder embeddings via Reciprocal Rank Fusion (pulling Top-100 candidates from each before fusion) eliminates the lexical blind spot and boosts Top-1 retrieval by 44%.*
 
 ---
 
@@ -165,12 +168,14 @@ YapSearch/
 │       └── ci.yml             # GitHub Actions CI automated testing pipeline
 ├── backend/
 │   ├── main.py                # FastAPI endpoints, lifespan manager & static routing
-│   ├── search_core.py         # Vector similarity math, intent extraction & ranking
+│   ├── search_core.py         # Hybrid ranking (Dense + BM25 RRF), intent parser
+│   ├── bm25.py                # In-memory BM25Okapi engine with global corpus IDF
 │   ├── config.py              # Centralized environment, paths & search configuration
 │   └── schemas.py             # Pydantic typed request & response API models
 ├── frontend/
 │   └── index.html             # WhatsApp-style dark mode glassmorphism UI
 ├── tests/
+│   ├── test_bm25.py           # Unit tests for BM25 indexing & RRF fusion
 │   ├── test_parser.py         # Unit tests for query entity & temporal parsing
 │   ├── test_search.py         # Unit tests for boolean masks & context expansion
 │   └── test_api.py            # Integration tests for FastAPI endpoints

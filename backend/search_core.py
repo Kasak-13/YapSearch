@@ -9,28 +9,33 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 
 try:
+    from backend.bm25 import BM25Okapi
     from backend.config import (
         PARTICIPANTS, REFERENCE_DATE, MODEL_NAME,
         MESSAGES_PATH, EMBEDDINGS_RAW_PATH, EMBEDDINGS_CONTEXT_PATH,
-        DEFAULT_TOP_K, CONTEXT_EXPANSION_WINDOW, RAW_WEIGHT, CONTEXT_WEIGHT
+        DEFAULT_TOP_K, CONTEXT_EXPANSION_WINDOW, RAW_WEIGHT, CONTEXT_WEIGHT,
+        BM25_K1, BM25_B, RRF_K, RRF_TOP_N, WEIGHT_DENSE, WEIGHT_BM25
     )
 except ImportError:
+    from bm25 import BM25Okapi
     from config import (
         PARTICIPANTS, REFERENCE_DATE, MODEL_NAME,
         MESSAGES_PATH, EMBEDDINGS_RAW_PATH, EMBEDDINGS_CONTEXT_PATH,
-        DEFAULT_TOP_K, CONTEXT_EXPANSION_WINDOW, RAW_WEIGHT, CONTEXT_WEIGHT
+        DEFAULT_TOP_K, CONTEXT_EXPANSION_WINDOW, RAW_WEIGHT, CONTEXT_WEIGHT,
+        BM25_K1, BM25_B, RRF_K, RRF_TOP_N, WEIGHT_DENSE, WEIGHT_BM25
     )
 
 logger = logging.getLogger("yapsearch.core")
 
 class SearchCore:
     """
-    Core semantic retrieval engine.
+    Core hybrid retrieval engine.
     Handles:
       - Intent & entity extraction (speakers, temporal windows)
       - Boolean bitmask pre-filtering
-      - Bi-encoder dense vector inference
-      - Hybrid Z-score rank fusion (Raw + Context)
+      - Bi-encoder dense vector inference (raw + contextual embeddings)
+      - In-memory BM25Okapi lexical retrieval with global IDF
+      - Reciprocal Rank Fusion (RRF) combining dense & lexical rankings
       - Dialogue context expansion (+/- 3 messages)
     """
 
@@ -38,11 +43,12 @@ class SearchCore:
         self.messages: List[Dict[str, Any]] = []
         self.embeddings_raw: Optional[np.ndarray] = None
         self.embeddings_context: Optional[np.ndarray] = None
+        self.bm25: Optional[BM25Okapi] = None
         self.model: Optional[SentenceTransformer] = None
         self._is_loaded: bool = False
 
     def load_data(self) -> None:
-        """Loads chat corpus, pre-computed embeddings, and initializes the bi-encoder."""
+        """Loads chat corpus, pre-computed embeddings, initializes BM25 and bi-encoder."""
         if self._is_loaded:
             return
 
@@ -56,6 +62,11 @@ class SearchCore:
 
         logger.info(f"Initializing SentenceTransformer model ({MODEL_NAME})...")
         self.model = SentenceTransformer(MODEL_NAME)
+
+        logger.info("Initializing in-memory BM25Okapi lexical index on full corpus...")
+        corpus_texts = [msg["text"] for msg in self.messages]
+        self.bm25 = BM25Okapi(corpus_texts, k1=BM25_K1, b=BM25_B)
+
         self._is_loaded = True
         logger.info(f"YapSearch ready: {len(self.messages)} messages indexed.")
 
@@ -222,9 +233,29 @@ class SearchCore:
         hybrid_raw = (RAW_WEIGHT * sim_raw) + (CONTEXT_WEIGHT * sim_context)
         display_scores = np.clip(hybrid_raw, 0.0, 1.0)
 
-        # Top-K candidate sorting
-        k = min(top_k, len(hybrid_z))
-        top_local_indices = np.argsort(hybrid_z)[::-1][:k]
+        # 4. In-memory BM25 Lexical Scoring (computed using global corpus IDF, applied over valid candidates)
+        bm25_scores = self.bm25.score_candidates(semantic_query, valid_indices)
+
+        # 5. Pull Top-N candidates (100) from each retriever before RRF fusion
+        pool_size = min(RRF_TOP_N, len(valid_indices))
+        top_dense_local = np.argsort(hybrid_z)[::-1][:pool_size]
+        top_bm25_local = np.argsort(bm25_scores)[::-1][:pool_size]
+
+        # 6. Reciprocal Rank Fusion (RRF)
+        rrf_scores: Dict[int, float] = {}
+
+        # Dense semantic rankings (1-based rank)
+        for rank, local_idx in enumerate(top_dense_local, start=1):
+            rrf_scores[local_idx] = rrf_scores.get(local_idx, 0.0) + (WEIGHT_DENSE / (RRF_K + rank))
+
+        # BM25 lexical rankings (only items with positive lexical match)
+        for rank, local_idx in enumerate(top_bm25_local, start=1):
+            if bm25_scores[local_idx] > 0.0:
+                rrf_scores[local_idx] = rrf_scores.get(local_idx, 0.0) + (WEIGHT_BM25 / (RRF_K + rank))
+
+        # Sort merged candidates by RRF score descending
+        sorted_candidates = sorted(rrf_scores.keys(), key=lambda idx: rrf_scores[idx], reverse=True)
+        top_local_indices = sorted_candidates[:min(top_k, len(sorted_candidates))]
 
         results = []
         for local_idx in top_local_indices:

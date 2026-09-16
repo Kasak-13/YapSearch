@@ -30,3 +30,12 @@ DEFAULT_TOP_K = 5
 CONTEXT_EXPANSION_WINDOW = 3  # +/- 3 messages
 RAW_WEIGHT = 0.6
 CONTEXT_WEIGHT = 0.4
+
+# Hybrid Lexical (BM25) & Reciprocal Rank Fusion (RRF) Settings
+BM25_K1 = 1.5
+BM25_B = 0.75
+RRF_K = 60           # Standard smoothing constant
+RRF_TOP_N = 100      # Candidate pool size pulled from each retriever before fusion
+WEIGHT_DENSE = 1.0   # Relative weight for dense semantic rank
+WEIGHT_BM25 = 0.8    # Relative weight for BM25 lexical rank
+
