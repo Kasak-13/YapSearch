@@ -7,62 +7,70 @@
 
 YapSearch is a blazing-fast, strictly local semantic search engine tailored for messy, transliterated Hinglish group chats. 
 
-Built without relying on a bulky vector database, YapSearch uses a pure NumPy dense index and local `sentence-transformers` to deliver lightning-fast retrieval. It excels at tackling the hardest search problem in messaging apps: **Zero-Keyword Overlap**, where a user searches for a concept but none of the actual words appear in the target message.
+Built without relying on heavy external vector databases, YapSearch uses a pure NumPy dense index and local `sentence-transformers` to deliver sub-50ms retrieval across 5,700+ messages. It solves the hardest challenge in conversational retrieval: **Zero-Keyword Overlap**, where a query and its target message share zero identical lexical tokens (e.g., *"internet not working"* → *"wifi band hai no way"*).
 
 ---
 
-## ✨ Key Features
+## 🎯 The Engineering Challenge: Why Regular Search Fails
 
-1. **Contextual Embeddings (Zero-Overlap Solution)**: Solves the "impossible" zero-overlap problem by injecting situational awareness. The system concatenates a message with its preceding context before embedding it, and then applies a Z-Score Normalized Hybrid Blend (Raw + Context) to surface deeply buried messages without sacrificing precision on exact matches.
-2. **Custom Metadata Parser**: A handcrafted NLP pipeline that detects speaker names (e.g., `What did Priya say...`) and temporal triggers (e.g., `...yesterday?`) naturally within the query.
-3. **Pre-Filtering via Boolean Masks**: The parsed metadata is dynamically applied as a strict NumPy boolean mask *before* the vector dense lookup occurs, ensuring 100% attribution accuracy and extreme computational speed.
-4. **Hinglish Native**: Uses a robust `paraphrase-multilingual-MiniLM-L12-v2` transformer to handle heavily transliterated Hindi-English code-switching natively.
-5. **Sleek UI**: A premium, responsive glassmorphism frontend that renders conversational threads beautifully.
+| Traditional Search Approach | Why It Fails on Chat Data | How YapSearch Solves It |
+| :--- | :--- | :--- |
+| **Keyword / Lexical (BM25, Elastic)** | Fails on transliterated code-switching (Hinglish) and synonymy with 0 shared words. | Multilingual dense bi-encoder (`paraphrase-multilingual-MiniLM-L12-v2`) mapping semantic concepts across English & romanized Hindi. |
+| **Naive Sentence Embeddings** | Short chat fragments (*"theek hai"*, *"room pe aaja"*, *"lol"*) lack standalone semantic density. | **Context Injection**: Pre-concatenates trailing conversational turns into contextual embeddings. |
+| **Heavy Vector DBs (Pinecone, Weaviate)** | High operational complexity, memory overhead, and network latency for localized/on-device chat search. | **In-Memory NumPy Matrix Engine**: Pure vectorized dot-product linear algebra with sub-50ms response times. |
 
 ---
 
-## 🛠️ System Architecture
+## 📐 System Architecture
 
 ```mermaid
 flowchart TD
-    UserQuery["User Query (e.g. 'What did Priya say about the budget?')"] --> Parser["Metadata & NLP Parser"]
+    UserQuery["User Natural Query\n(e.g., 'What did Priya say about the budget?')"] --> Parser["Regex & Heuristic Metadata Parser"]
     
-    Parser -->|"Extracted Speaker / Date"| BoolMask["NumPy Boolean Pre-Filter Mask"]
-    Parser -->|"Cleaned Semantic Query"| Model["Sentence-Transformers (MiniLM-L12)"]
+    Parser -->|"Extracted Filters"| FilterEngine["NumPy Boolean Pre-Filtering Mask\n(Speaker, Date Ranges)"]
+    Parser -->|"Cleaned Semantic Text"| Embedder["Multilingual Bi-Encoder\n(sentence-transformers)"]
     
-    Model --> QueryVec["384-d Query Vector"]
+    Embedder --> QueryVector["384-d Query Dense Vector"]
     
-    subgraph In-Memory NumPy Dual Index
-        RawEmbeds["Raw Embeddings Matrix (5770 x 384)"]
-        ContextEmbeds["Context Embeddings Matrix (5770 x 384)"]
-    end
+    FilterEngine --> PreFilter["Active Candidate Mask\n(Valid Message Indices)"]
     
-    BoolMask -.->|"Pre-filters rows"| RawEmbeds
-    BoolMask -.->|"Pre-filters rows"| ContextEmbeds
+    QueryVector & PreFilter --> RawSim["Raw Embeddings Similarity\n(Dot Product / Norms)"]
+    QueryVector & PreFilter --> CtxSim["Contextual Embeddings Similarity\n(Dot Product / Norms)"]
     
-    QueryVec --> DotRaw["Cosine Similarity (Raw)"]
-    QueryVec --> DotCtx["Cosine Similarity (Context)"]
+    RawSim --> RawZ["Z-Score Normalization\n(sim_raw - μ) / σ"]
+    CtxSim --> CtxZ["Z-Score Normalization\n(sim_context - μ) / σ"]
     
-    RawEmbeds --> DotRaw
-    ContextEmbeds --> DotCtx
+    RawZ & CtxZ --> HybridScore["Hybrid Ranker\n0.6 * Z_raw + 0.4 * Z_context"]
     
-    DotRaw --> ZRaw["Z-Score Normalization"]
-    DotCtx --> ZCtx["Z-Score Normalization"]
-    
-    ZRaw --> Hybrid["Hybrid Score: 0.6*Raw_Z + 0.4*Context_Z"]
-    ZCtx --> Hybrid
-    
-    Hybrid --> TopK["Top-K ArgSort Ranking"]
-    TopK --> Expansion["Temporal Context Expansion (±3 Messages)"]
-    Expansion --> UI["FastAPI Backend ➔ Glassmorphic Web UI (<45ms)"]
+    HybridScore --> TopK["Top-K Candidate Selection"]
+    TopK --> ContextExpander["Context Window Expansion\n(±3 Messages Temporal Reconstruction)"]
+    ContextExpander --> UIResponse["FastAPI JSON API -> WhatsApp-style Glass UI"]
 ```
 
-### 📊 Performance & Specifications
-* **Search Latency**: `< 45ms` end-to-end (vector dot product + ranking in `< 4ms`)
-* **Index Footprint**: `~17.6 MB` in RAM for 5,770 dual 384-dimensional dense vectors
-* **Model**: `paraphrase-multilingual-MiniLM-L12-v2` (50+ languages, code-switch native)
-* **Zero External Dependencies**: Pure NumPy linear algebra (no Pinecone/Chroma/Weaviate needed)
-* **Resume & Interview Guide**: See **[RESUME_CHEATSHEET.md](RESUME_CHEATSHEET.md)** for bullet points and technical interview Q&A.
+---
+
+## ✨ Key Technical Highlights
+
+1. **Dual-Embedding Hybrid Ranking**:
+   - Computes both **Raw message embeddings** and **Context-aware embeddings** (incorporating preceding conversational context).
+   - Dynamically standardizes cosine similarity distributions via **Z-score normalization** before blending (`0.6 * raw_z + 0.4 * context_z`), preventing variance imbalance between embedding distributions.
+2. **Zero-Overhead Metadata Pre-Filtering**:
+   - Natural language queries like *"What did Priya say about the budget?"* automatically extract speaker (`Priya`) and temporal scopes (`last month`, `in July`) through deterministic parsing.
+   - Converts metadata into **NumPy boolean bitmasks** executed *prior* to similarity calculation, reducing dense matrix operations by up to 90%.
+3. **Temporal Context Expansion**:
+   - Surfaces conversational context (±3 messages) around retrieved hits, resolving distractor ambiguities and reconstructing dialogue flow directly in the interface.
+4. **Zero-Latency In-Memory Storage**:
+   - Compact 384-dimensional dense vectors stored in memory (`float32`), enabling sub-50ms search without network roundtrips.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Backend**: FastAPI (Python 3.11)
+- **ML / NLP**: `sentence-transformers`, `paraphrase-multilingual-MiniLM-L12-v2` (PyTorch)
+- **Index & Vector Math**: NumPy (Vectorized dense matrix operations, Z-score normalization)
+- **Data**: JSON structured chat corpus (5,770 messages, 8 personas)
+- **Frontend**: Vanilla HTML5, Modern CSS (Glassmorphism, dark mode, responsive), Vanilla JS
 
 ---
 
