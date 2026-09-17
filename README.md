@@ -150,14 +150,14 @@ python scripts/run_eval.py
 
 Evaluated on the rigorously de-biased corpus (5,764 unique texts across 5,770 messages, 99.9% uniqueness rate):
 
-| Metric | Dense-Only Baseline | Hybrid BM25 + Dense RRF | Relative Improvement |
+| Metric | Dense-Only Baseline | Hybrid BM25 + Dense RRF | Impact / Tradeoff |
 | :--- | :---: | :---: | :---: |
-| **Recall@1** | 12.5% (5/40) | **25.0% (10/40)** | **+100.0%** 🚀 |
+| **Recall@1** | 12.5% (5/40) | **25.0% (10/40)** | **+100.0%** 🚀 (Doubled Top-1 precision) |
 | **Recall@3** | 22.5% (9/40) | **32.5% (13/40)** | **+44.4%** 🚀 |
-| **Recall@5** | 35.0% (14/40) | **35.0% (14/40)** | **Parity** |
-| **Recall@10** | 47.5% (19/40) | **40.0% (16/40)** | Context-weighted |
+| **Recall@5** | 35.0% (14/40) | **35.0% (14/40)** | Parity |
+| **Recall@10** | **47.5% (19/40)** | 40.0% (16/40) | Tradeoff (-7.5%) |
 
-*Key Takeaway: Combining in-memory BM25 lexical token matching with contextual bi-encoder embeddings via Reciprocal Rank Fusion (pulling Top-100 candidates from each before fusion) completely doubles Top-1 precision (from 12.5% to 25.0%) on naturalistic chat data.*
+*Key Tradeoff & System Insight: RRF deliberately trades a small amount of Recall@10 (47.5% → 40.0%) for a 2x gain in Recall@1 (12.5% → 25.0%). Because Reciprocal Rank Fusion favors cross-method consensus over single-method recall depth, a document ranking mediocre-but-present in both lists receives two reciprocal rank boosts and can displace a hit that ranked well only in dense search. In production conversational retrieval, doubling top-1 precision (what the user immediately sees) is decisively worth this ceiling tradeoff.*
 
 ---
 
