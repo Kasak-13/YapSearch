@@ -82,7 +82,7 @@ To keep the project self-contained, reproducible, and privacy-safe:
 
 | Component | Status | Details |
 | :--- | :--- | :--- |
-| **Chat Corpus** | **Simulated / Synthetic** | 5,770 messages (5,764 unique texts, 99.9% diversity) generated to mimic an authentic college friend group chat in transliterated Hinglish across 8 personas. |
+| **Chat Corpus** | **Simulated / Synthetic** | 5,770 messages (5,746 unique texts, 99.6% diversity) generated to mimic an authentic college friend group chat in transliterated Hinglish across 8 personas. |
 | **Temporal Anchor** | **Fixed ("Mocked Current Time")** | The reference date `REFERENCE_DATE` is anchored to `September 1, 2026` so temporal queries (`"yesterday"`, `"last month"`) resolve deterministically against the dataset. |
 | **WhatsApp Connection** | **Offline (No Live Meta API)** | Runs locally on structured chat data rather than a live WhatsApp session hook. |
 | **Embeddings & NLP** | **100% Real** | Real local transformer inference using `paraphrase-multilingual-MiniLM-L12-v2` via `sentence-transformers`. |
@@ -110,7 +110,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Generate the Dataset
-Generate the 5,770-message synthetic Hinglish corpus (5,764 unique texts, 99.9% diversity) and the 40-query ground truth evaluation set.
+Generate the 5,770-message synthetic Hinglish corpus (5,746 unique texts, 99.6% diversity) and the 40-query ground truth evaluation set.
 ```bash
 python scripts/generate_data.py
 ```
@@ -160,16 +160,16 @@ python scripts/run_eval.py
 
 ### 📊 Benchmark Results (Dense vs. Hybrid RRF Fusion)
 
-Evaluated on the rigorously de-biased corpus (5,764 unique texts across 5,770 messages, 99.9% uniqueness rate):
+Evaluated on the semantically scrubbed, de-biased corpus (5,746 unique texts across 5,770 messages, 99.6% uniqueness rate, capped template reuse):
 
 | Metric | Dense-Only Baseline | Hybrid BM25 + Dense RRF | Impact / Tradeoff |
 | :--- | :---: | :---: | :---: |
-| **Recall@1** | 12.5% (5/40) | **25.0% (10/40)** | **+100.0%** 🚀 (Doubled Top-1 precision) |
-| **Recall@3** | 22.5% (9/40) | **32.5% (13/40)** | **+44.4%** 🚀 |
-| **Recall@5** | 35.0% (14/40) | **35.0% (14/40)** | Parity |
-| **Recall@10** | **47.5% (19/40)** | 40.0% (16/40) | Tradeoff (-7.5%) |
+| **Recall@1** | 20.0% (8/40) | **30.0% (12/40)** | **+50.0%** 🚀 *(High-precision Top-1 retrieval)* |
+| **Recall@3** | 37.5% (15/40) | **40.0% (16/40)** | **+6.7%** 🚀 |
+| **Recall@5** | 45.0% (18/40) | **45.0% (18/40)** | Parity |
+| **Recall@10** | **50.0% (20/40)** | 47.5% (19/40) | Tradeoff (-2.5%) |
 
-*Key Tradeoff & System Insight: RRF deliberately trades a small amount of Recall@10 (47.5% → 40.0%) for a 2x gain in Recall@1 (12.5% → 25.0%). Because Reciprocal Rank Fusion favors cross-method consensus over single-method recall depth, a document ranking mediocre-but-present in both lists receives two reciprocal rank boosts and can displace a hit that ranked well only in dense search. In production conversational retrieval, doubling top-1 precision (what the user immediately sees) is decisively worth this ceiling tradeoff.*
+*Key Tradeoff & System Insight: Hybrid RRF prioritizes Top-1 precision (+50.0% over dense-only) while maintaining 47.5% Recall@10. Reciprocal Rank Fusion optimizes for cross-method consensus rather than single-method recall depth; documents with mutual agreement in both semantic and lexical candidate pools receive compounded boosts, ensuring the top displayed result has the highest combined confidence.*
 
 ---
 

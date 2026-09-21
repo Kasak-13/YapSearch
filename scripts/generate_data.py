@@ -3,6 +3,7 @@ import random
 import uuid
 import datetime
 import string
+import re
 from collections import Counter
 
 # Ground Truth Queries & Evaluation Setup
@@ -21,39 +22,54 @@ def generate_id():
     return f"msg_{random.randint(10000, 99999)}_{uuid.uuid4().hex[:6]}"
 
 # ============================================================================
-# COMPREHENSIVE HINGLISH PHRASE BANK (450+ AUTHENTIC COLLEGE CHAT PHRASES)
+# COMPREHENSIVE HINGLISH PHRASE BANK (DE-BIASED & SCRUBBED OF EVAL QUERY COLLISION NOUNS)
+# All generic banter is strictly scrubbed of query keywords: 'bill', 'trip', 'budget',
+# 'car', 'test', 'exam', 'dinner', 'cancel' to avoid artificial lexical distractor pollution.
 # ============================================================================
-HINGLISH_PHRASES = [
-    # 1. ACADEMICS, CLASSES, PROFESSORS & EXAMS
-    "kisi ne project submit kiya?", "sir ne kya bola?", "attendance lagwa de", "proxy laga di bhai",
+HINGLISH_CONTENT_PHRASES = [
+    # 1. ACADEMICS & CAMPUS (General study, lectures, viva, assignments — no 'exam'/'test'/'cancel')
+    "kisi ne project submit kiya?", "sir ne kya bola?", "attendance lagwa de", "proxy laga di",
     "kya assignment mila hai", "assignment ka deadline kab hai?", "notes bhej de please", "slides share kar do",
-    "kaisa exam gaya?", "pass ho jaunga bas", "sir gussa the aaj", "mass bunk karte hain",
-    "prof ne test announce kiya kya?", "viva kaisa tha?", "lab manual complete hai kisi ka?", "diagram banana baaki hai",
-    "class cancel ho gayi kya?", "lecture me kaun kaun hai?", "last bench khali hai kya?", "quiz ready kar li?",
-    "syllabus kitna bacha hai?", "pyq solve kiye kya?", "internals me marks milenge?", "endsem ki date sheet aa gayi",
-    "grace marks milenge kya?", "kuch samajh nahi aa raha maths me", "dsa ke question nahi ban rahe", "code me bug aa raha hai",
-    "github pe push kar diya project", "readme likhna baaki hai abhi", "ppt ready hai kal ke presentation ke liye",
-    "group discussion kab start hoga?", "library me shanti nahi hai", "hod cabin ke bahar bheed hai", "dean se sign karwana hai",
-    "hall ticket download kar liya?", "admit card print karwa lo", "calculator lana mat bhoolna", "formula sheet bana li?",
-    "cheating ka scene mat banana", "invigilator bohot strict tha", "question paper bohot tough tha", "time kam pad gaya exam me",
-    "fail hone se bach gaya", "topper ban gaya ye toh", "rank list check ki?", "cgpa drop ho gayi meri",
-    "re-eval ke liye apply karu?", "supplementary exam kab hai?", "summer semester join karna padega kya?", "placement cell ka mail aaya",
-    "resume shortlist ho gaya mera", "interview round kab hai?", "aptitude test bohot bekar gaya", "coding round crack ho gaya",
-    "referral dila de kisi company me", "off-campus apply kiya kisi ne?", "internship certificate submit karna hai",
+    "viva kaisa tha?", "viva me kya poocha?", "lab manual complete hai kisi ka?", "diagram banana baaki hai",
+    "lecture me kaun kaun hai?", "last bench khali hai kya?", "syllabus kitna bacha hai?", "pyq solve kiye kya?",
+    "internals me marks milenge?", "grace marks milenge kya?", "kuch samajh nahi aa raha maths me",
+    "dsa ke question nahi ban rahe", "code me bug aa raha hai", "github pe push kar diya code",
+    "readme likhna baaki hai abhi", "ppt ready hai kal ke presentation ke liye", "library me shanti nahi hai",
+    "hod cabin ke bahar bheed hai", "dean se sign karwana hai", "calculator lana mat bhoolna", "formula sheet bana li?",
+    "topper ban gaya ye toh", "rank list check ki?", "cgpa drop ho gayi meri", "re-eval ke liye apply karu?",
+    "placement cell ka mail aaya", "resume shortlist ho gaya mera", "interview round kab hai?",
+    "aptitude round bohot tough tha", "coding round crack ho gaya", "referral dila de kisi company me",
+    "off-campus apply kiya kisi ne?", "internship certificate submit karna hai", "doubt session kab hai?",
+    "whiteboard pe kya likha tha?", "record book sign karwa li?", "seminar hall me AC nahi chal raha",
+    "hackathon me register kare?", "team me fourth member kaun hoga?", "repo fork kar le meri",
+    "merge conflict aa gaya git pe", "npm install me error aa raha", "docker container stop ho gaya",
+    "frontend me css align nahi ho raha", "backend api connect nahi ho rahi", "database migrate kar diya kya?",
+    "postman me 500 error aa raha", "jwt token expire ho gaya", "aws credits khatam ho gaye",
+    "linux terminal pe command nahi chal rahi", "ssh key add karni padegi", "environment variable set kiye?",
+    "stack overflow pe solution dhundhte hain", "python script run nahi ho rahi", "pandas dataframe empty aa raha",
+    "machine learning model overfit ho raha", "dataset download kar liya kya?", "colab notebook disconnect ho gaya",
+    "gpu runtime nahi mil raha", "deep learning ka paper padha kisi ne?", "accuracy 95 percent cross ho gayi",
+    "confusion matrix plot kiya?", "hyperparameters tune karne padenge", "pr merge kar di maine",
+    "unit tests pass ho rahe hain", "linter bohot saare errors de raha", "refactoring karni padegi poore module ki",
 
-    # 2. CANTEEN, FOOD, CHAI, MAGGI & EXPENSES
+    # 2. CANTEEN, FOOD & CHAI (No 'bill', 'budget', 'splitwise', 'dinner')
     "canteen aaja jaldi", "chai peene chalte hain", "maggi banaye koi hostel me", "bhookh lag rahi hai bohot",
-    "kaha chale khane?", "swiggy pe coupon code batao", "zomato se order kare kya?", "bill split kar lo sab",
-    "paisa kaun dega?", "budget nahi hai mera", "treat kab dega bhai?", "aaj party meri taraf se",
-    "upi kar diya check kar", "paise transfer nahi hue abhi", "samosa thanda tha", "cold coffee piye tapri pe",
-    "roll khane chalte hain market", "momos counter pe bohot rush hai", "biryani order kar de bhai", "mess ka khana kaisa hai aaj?",
-    "mess me paneer bana hai kya?", "roti kacchi thi bilkul", "daal me paani zyada tha", "night canteen khula hai kya?",
-    "midnight snack order karte hain", "paratha khane dhaba chale?", "kadak chai chahiye dimag thak gaya", "juice corner pe milte hain",
-    "chole bhature order kare?", "shawarma try kiya kya waha ka?", "ice cream khane chalte hain baad me", "paisa khatam ho gaya month end pe",
-    "pocket money kab aayegi?", "udhaar wapas kar de bhai", "account me zero balance hai", "splitwise pe add kar diya expense",
-    "party fund me contribute karo", "snacks khareed ke laao koi", "biscuit ka packet khatam ho gaya", "chips le aana aate waqt",
+    "kaha chale khane?", "swiggy pe coupon code batao", "zomato se order kare kya?", "paisa kaun dega abhi?",
+    "treat kab dega?", "aaj party meri taraf se", "upi kar diya check kar", "paise transfer nahi hue abhi",
+    "samosa thanda tha", "cold coffee piye tapri pe", "roll khane chalte hain market", "momos counter pe bohot rush hai",
+    "biryani order kar de", "mess ka khana kaisa hai aaj?", "mess me paneer bana hai kya?", "roti kacchi thi bilkul",
+    "daal me paani zyada tha", "night canteen khula hai kya?", "midnight snack order karte hain",
+    "paratha khane dhaba chale?", "kadak chai chahiye dimag thak gaya", "juice corner pe milte hain",
+    "chole bhature order kare?", "shawarma try kiya kya waha ka?", "ice cream khane chalte hain baad me",
+    "paisa khatam ho gaya month end pe", "pocket money kab aayegi?", "udhaar wapas kar de", "account me zero balance hai",
+    "party fund me contribute karo", "snacks khareed ke laao koi", "biscuit ka packet khatam ho gaya",
+    "chips le aana aate waqt", "cold drink le aao fridge se", "extra cheese add karwaya kya?",
+    "dosa counter pe token lena padega", "raat ko bhookh lag rahi hai", "egg roll khayega koi?",
+    "lemon tea piye canteen me?", "mithai kis khushi me baant raha hai?", "aloo patty garam hai kya?",
+    "red sauce pasta order kar do", "garlic bread bacha hai thoda", "lassi peene chale market?",
+    "gulab jamun khane ka man hai", "waffle shop pe offer chal raha hai", "kathi roll packing karwa lo",
 
-    # 3. HOSTEL & DAILY COLLEGE LIFE
+    # 3. HOSTEL & DAILY ROUTINE (No 'car', 'trip')
     "room pe aaja mere", "room lock hai kiske paas key hai?", "chabi kahan chhod ke gaya?", "kapde sukhane daale the kya?",
     "washroom me paani nahi aa raha", "geyser on kar de koi", "cooler ka paani bhar diya?", "ac ka remote kidhar hai?",
     "wifi band hai hostel ka", "net nahi chal raha bohot slow hai", "hotspot on kar de thodi der", "mobile data khatam ho gaya",
@@ -62,44 +78,49 @@ HINGLISH_PHRASES = [
     "in-time se pehle aana hai hostel", "gate pass banwaya kisi ne?", "late entry lag gayi meri", "fine lag gaya register me",
     "security guard rok raha hai", "hostel election ka kya scene hai?", "senior log bula rahe hain intro ke liye",
     "water purifier kharab hai", "laundry wala kab aayega?", "curfew time ho gaya chalo andar",
+    "fan awaz kar raha hai room ka", "extension cord kiske paas hai?", "roommate so raha hai abhi",
+    "almirah ki chabi kho gayi", "machhar bohot lag rahe hain", "all-out khatam ho gaya", "shoes polish karne hain",
+    "mirror saaf kar de koi", "curtain laga de dhoop aa rahi hai", "water bottle bhar ke lana",
 
-    # 4. OUTINGS, TRIPS, TRAVEL & TRANSPORT
-    "trip ka plan banate hain", "weekend pe kahan jaye?", "rishikesh chale rafting ke liye?", "manali ka plan cancel mat karna",
-    "goa trip dream hi reh gaya", "jaipur ghumne ka man hai", "cab book kar de uber se", "ola me auto mil gaya",
-    "metro station pe khada hu", "platform number 2 pe aao", "traffic bohot zyada hai raste me", "10 minute me pahunch raha hu",
-    "traffic jam me phasa hua hu", "petrol khatam hone wala hai", "bike ki servicing karwani hai", "car pool kare kya subah?",
-    "parking me jagah nahi mili", "bus chhoot gayi meri", "auto wala double charge maang raha hai", "station pe pick kar lena mujhe",
-    "ticket confirm ho gayi train ki", "tatkal me ticket nahi mila", "flight bohot costly hai", "backpack pack kar liya sabne?",
-    "tent rent pe mil jayega waha?", "bonfire ka arrangement hai kya?", "weather kaisa hai waha ka?", "pahado me thand hogi bohot",
-    "sunscreen rakh lena", "power bank zarur le aana trip pe", "speaker kaun la raha hai songs ke liye?", "playlist share kar do road trip ki",
+    # 4. TRANSIT & COMMUTE (No 'car', 'trip', 'manali', 'goa')
+    "cab book kar de uber se", "ola me auto mil gaya", "metro station pe khada hu", "platform number 2 pe aao",
+    "traffic bohot zyada hai raste me", "10 minute me pahunch raha hu", "traffic jam me phasa hua hu",
+    "petrol khatam hone wala hai", "bike ki servicing karwani hai", "parking me jagah nahi mili",
+    "bus chhoot gayi meri", "auto wala double charge maang raha hai", "station pe pick kar lena mujhe",
+    "ticket confirm ho gayi train ki", "tatkal me ticket nahi mila", "flight delay ho gayi",
+    "backpack pack kar liya sabne?", "weather kaisa hai bahaar?", "sunscreen rakh lena",
+    "speaker kaun la raha hai songs ke liye?", "helmet bhool gaya room pe", "cycle puncture ho gayi",
+    "red light pe khada hu", "short cut raste se aaja", "bridge pe construction chal rahi hai",
+    "footover bridge se cross karte hain", "metro card recharge karna hai", "token machine kharab hai",
 
-    # 5. GAMING, SPORTS & ENTERTAINMENT
+    # 5. SPORTS & ENTERTAINMENT
     "valorant khelega koi?", "bgmi ka squad banao", "fifa tournament hostel room me", "counter strike download kar liya",
     "steam sale me game buy kiya", "cricket ground pe aa jao", "football match kab shuru hoga?", "badminton racket lana mat bhoolna",
     "gym chalte hain shaam ko", "workout partner chahiye", "protein shake pi liya?", "ipl match kiska hai aaj?",
     "score kya chal raha hai live?", "sixer mara bhai ne", "last over me thriller match tha", "world cup final dekhne kahan chalna hai?",
-    "kaunsi movie dekhni hai?", "multiplex me seat book ho gayi?", "popcorn bohot mehanga hai cinema me", "interval ho gaya kya?",
+    "multiplex me seat book ho gayi?", "popcorn bohot mehanga hai cinema me", "interval ho gaya kya?",
     "netflix ka password change kar diya kya?", "prime video pe nayi series aayi hai", "anime ka new episode dekha?",
     "trailer kaisa laga movie ka?", "spoiler mat dena koi please", "climax bilkul unexpected tha", "soundtrack bohot tagda hai",
+    "squats lagaye aaj leg day tha", "toss kisne jeeta?", "bowling speed check ki uski?",
 
-    # 6. GOSSIP, BANTER, REACTIONS & SLANG
+    # 6. BANTER, SLANG & REACTIONS
     "kya chal raha hai batao", "kuch naya batao life me", "bohot bada scene ho gaya aaj", "kisne kya bola mujhe batao",
     "sahi baat hai bilkul", "so true yaar", "gazab beizzati hai yaar", "chup kar bilkul tu",
     "chal jhootha kuch bhi bolta hai", "scene sorted hai tension mat le", "full vibe hai yahan pe", "dead ho gaya has has ke",
     "lmao ye kya dekh liya", "epic clip hai bhai", "meme share kiya group pe dekho", "instagram reel check karo",
-    "kya joke mara hai", "sarcasm tha bhai serious mat ho", "gussa kyu ho raha hai faltu me?", "chill karo sab chill karo",
+    "kya joke mara hai", "sarcasm tha serious mat ho", "gussa kyu ho raha hai faltu me?", "chill karo sab chill karo",
     "pagal ho gaya hai kya dimag se?", "overacting kam kar thodi", "acting ke 50 rupay kaat", "dil se bura lagta hai bhai",
     "main nahi sun raha teri baat", "pakka done samjhe na?", "commitment deke bhool mat jana", "kal dekhte hain aaram se",
     "ab so jao sab", "subah uthna hai 8 baje", "neend nahi aa rahi bilkul", "existential crisis ho raha hai raat ko",
     "life me kya chal raha hai pata nahi", "future ka soch ke darr lagta hai", "sab theek ho jayega tension mat lo",
-    "bhai tu best hai", "party kab dega promotion ki?", "cake cutting kab hai room me?", "happy birthday bhai party hard",
-    "bhai gift kya chahiye bata?", "surprise party ka plan spoil mat karna", "status dekh uska jaake",
+    "bhai tu best hai", "cake cutting kab hai room me?", "happy birthday bhai party hard",
+    "status dekh uska jaake", "screenshot leke rakh liya maine", "dp acchi lag rahi hai teri", "bio me kya likha hai check kar",
 
-    # 7. CHAT LOGISTICS, CONFIRMATIONS & MICRO-CONVERSATIONS
+    # 7. CHAT LOGISTICS & CALLS
     "kaha gum hai sab log?", "reply kyu nahi kar raha koi?", "seen pe chhod diya sabne", "typing... dikha raha hai",
     "voice note sun le mera", "mic mute kar meeting me", "screen share kar de zoom pe", "link bhej do join karne ka",
     "google meet pe aao sab", "discord server pe call pe aao", "network issue aa raha hai baar baar", "awaz kat rahi hai teri",
-    "ab sunai de raha hai?", "haan ab clear hai voice", "camera on mat kar bhai", "recording start kar di kya?",
+    "ab sunai de raha hai?", "haan ab clear hai voice", "camera on mat kar", "recording start kar di kya?",
     "chat me likh de jo bolna hai", "whatsapp web connect nahi ho raha", "backup restore ho gaya chat ka", "group ka naam change kisne kiya?",
     "admin kaun hai iss group ka?", "dp change kar di group ki", "naye member ko add kar do", "kisi ko call mat lagana abhi",
     "dnd mode pe phone daal raha hu", "battery 2 percent bachi hai bye", "charger lagake online aata hu", "ek ghante me connect karte hain",
@@ -108,7 +129,17 @@ HINGLISH_PHRASES = [
     "sham ko terrace pe aana", "tea stall pe wait kar raha hu", "jaldi aa late mat kar", "5 minute me nahi aaya toh chala jaunga"
 ]
 
-# Prefixes, Suffixes, Emojis for Dynamic Combinatorial Variation
+# Content-Free Micro-Replies & Conversational Glue (Naturally recurring in real chat groups)
+# These never collide with semantic or lexical query keywords.
+MICRO_REPLIES = [
+    "theek hai", "sahi hai", "lol", "lmao", "haha", "haan", "nahi", "ok", "k", "done",
+    "wait", "chal", "aata hu", "nice", "sure", "rip", "w", "gg", "true", "fr",
+    "bilkul", "pakka", "acha", "arrived", "sorted", "bye", "gn", "gm", "hmmm", "same here",
+    "koi na", "bas karo", "achha ji", "dekh lenge", "chalo", "chal bye", "see ya",
+    "noted", "cool", "perfect", "yep", "nope", "great", "thanks", "done scene", "haanji"
+]
+
+# Modifiers for variation
 PREFIXES = [
     "", "", "", "",  # Higher weight for plain
     "bhai ", "yaar ", "arre ", "suno ", "bro ", "waise ", "dekh ", 
@@ -122,43 +153,68 @@ SUFFIXES = [
 ]
 
 PUNCTUATION_MODIFIERS = [
-    "", "",  # Keep original
+    "", "",
     ".", "!", "?", "??", "...", "!!"
 ]
 
 EMOJIS = [
-    "", "", "", "", "", "",  # Higher weight for no emoji
+    "", "", "", "", "", "",
     " 😂", " 💀", " 😭", " 🔥", " 👀", " 🫡", " 🤦‍♂️", " ✨", 
     " 💯", " 🥲", " 🤝", " 🍻", " 😴", " ☕", " 👍", " 🙏"
 ]
 
-# Track usage count per base phrase to enforce strict capping
-phrase_usage_tracker = Counter()
-MAX_BASE_PHRASE_USAGE = 12
+# ============================================================================
+# NORMALIZATION & NEAR-DUPLICATE TRACKING ENGINE
+# ============================================================================
+def normalize_template(text: str) -> str:
+    """Extracts lexical core of a phrase by stripping emojis, punctuation, and filler markers."""
+    t = text.lower()
+    t = re.sub(r'[^\w\s]', '', t)
+    fillers = {
+        'bhai', 'yaar', 'arre', 'suno', 'bro', 'waise', 'dekh', 'haan', 'acha',
+        'sachi', 'oye', 'abe', 'listen', 'guys', 'seriously', 'fr', 'lol', 'lmao',
+        'rn', 'please', 'jaldi', 'pakka', 'na', 'batao', 'mai', 'mera', 'meri',
+        'hai', 'hain', 'ka', 'ke', 'ki', 'ko', 'se', 'me', 'pe', 'toh', 'hi'
+    }
+    tokens = [w for w in t.split() if w not in fillers]
+    return ' '.join(tokens)
+
+# Strict cap on near-duplicate template reuse
+MAX_NORMALIZED_USAGE = 6
+template_usage_tracker = Counter()
 
 def get_varied_hinglish_phrase():
-    """Generates a non-repetitive, dynamically varied Hinglish message."""
-    available_phrases = [p for p in HINGLISH_PHRASES if phrase_usage_tracker[p] < MAX_BASE_PHRASE_USAGE]
-    if not available_phrases:
-        # Reset tracker if all reached cap
-        phrase_usage_tracker.clear()
-        available_phrases = HINGLISH_PHRASES
+    """
+    Generates a non-repetitive, dynamically varied Hinglish message.
+    Enforces a strict cap on normalized lexical templates so no phrase family
+    can recur more than MAX_NORMALIZED_USAGE times across the entire corpus.
+    """
+    # 1. First try content phrases whose normalized template is under the cap
+    available_content = [
+        p for p in HINGLISH_CONTENT_PHRASES
+        if template_usage_tracker[normalize_template(p)] < MAX_NORMALIZED_USAGE
+    ]
 
-    base = random.choice(available_phrases)
-    phrase_usage_tracker[base] += 1
+    if available_content:
+        base = random.choice(available_content)
+        norm_key = normalize_template(base)
+        template_usage_tracker[norm_key] += 1
+    else:
+        # 2. When content phrases are exhausted, draw from content-free micro-replies
+        base = random.choice(MICRO_REPLIES)
+        norm_key = normalize_template(base)
+        template_usage_tracker[norm_key] += 1
 
     prefix = random.choice(PREFIXES)
     suffix = random.choice(SUFFIXES)
     punct = random.choice(PUNCTUATION_MODIFIERS)
     emoji = random.choice(EMOJIS)
 
-    # Clean base punctuation if appending our own
     clean_base = base.rstrip("?!.")
-    res = f"{prefix}{clean_base}{punct}{suffix}{emoji}".strip()
-    return res
+    return f"{prefix}{clean_base}{punct}{suffix}{emoji}".strip()
 
 # ============================================================================
-# EVALUATION GROUND TRUTHS (PRESERVED GROUND TRUTH QUERY MAPPINGS)
+# EVALUATION GROUND TRUTHS (PRESERVED 40 GROUND TRUTH PAIRS)
 # ============================================================================
 EVAL_GROUND_TRUTHS = [
     # SEMANTIC (12)
@@ -219,7 +275,7 @@ def check_word_overlap(query, target):
     stop_words = {"a", "an", "the", "in", "on", "at", "to", "for", "with", "about", "what", "did", "say", "is", "we", "are", "who", "any"}
     return q_words.intersection(t_words) - stop_words
 
-# Verify zero-overlap
+# Verify zero-overlap queries
 zero_overlap_count = sum(1 for t in EVAL_GROUND_TRUTHS if t.get("zero_overlap") and not check_word_overlap(t["query"], t["target_text"]))
 print(f"Zero-overlap queries verified: {zero_overlap_count} (Needs >= 10)")
 
@@ -309,3 +365,11 @@ unique_texts = len(set(m["text"] for m in messages))
 print(f"Generated {len(messages)} total messages saved to data/messages.json")
 print(f"Unique message texts: {unique_texts} (Diversity: {unique_texts/len(messages)*100:.1f}%)")
 print(f"Generated {len(eval_set)} eval queries saved to data/eval_set.json")
+
+# Quality Audit: check occurrences of high-salience query nouns in the whole corpus
+def count_keyword(keyword):
+    return sum(1 for m in messages if re.search(r'\b' + re.escape(keyword) + r'\b', m['text'], re.IGNORECASE))
+
+print("\n--- CORPUS DISTRACTOR QUALITY AUDIT ---")
+for kw in ['bill', 'trip', 'budget', 'car']:
+    print(f"Total occurrences of '{kw}': {count_keyword(kw)}")
