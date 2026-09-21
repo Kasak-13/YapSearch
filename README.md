@@ -9,7 +9,7 @@
 
 YapSearch is a blazing-fast, strictly local semantic search engine tailored for messy, transliterated Hinglish group chats. 
 
-Built without relying on heavy external vector databases, YapSearch uses a pure NumPy dense index and local `sentence-transformers` to deliver sub-50ms retrieval across 5,700+ messages. It solves the hardest challenge in conversational retrieval: **Zero-Keyword Overlap**, where a query and its target message share zero identical lexical tokens (e.g., *"internet not working"* → *"wifi band hai no way"*).
+Built without relying on heavy external vector databases, YapSearch uses a pure NumPy dense index and local `sentence-transformers` to deliver sub-50ms retrieval across 5,770 messages (99.9% unique textual diversity). It solves the hardest challenge in conversational retrieval: **Zero-Keyword Overlap**, where a query and its target message share zero identical lexical tokens (e.g., *"internet not working"* → *"wifi band hai no way"*).
 
 ---
 
@@ -82,7 +82,7 @@ To keep the project self-contained, reproducible, and privacy-safe:
 
 | Component | Status | Details |
 | :--- | :--- | :--- |
-| **Chat Corpus** | **Simulated / Synthetic** | 5,770 messages generated to mimic an authentic, messy college friend group chat in transliterated Hinglish across 8 personas. |
+| **Chat Corpus** | **Simulated / Synthetic** | 5,770 messages (5,764 unique texts, 99.9% diversity) generated to mimic an authentic college friend group chat in transliterated Hinglish across 8 personas. |
 | **Temporal Anchor** | **Fixed ("Mocked Current Time")** | The reference date `REFERENCE_DATE` is anchored to `September 1, 2026` so temporal queries (`"yesterday"`, `"last month"`) resolve deterministically against the dataset. |
 | **WhatsApp Connection** | **Offline (No Live Meta API)** | Runs locally on structured chat data rather than a live WhatsApp session hook. |
 | **Embeddings & NLP** | **100% Real** | Real local transformer inference using `paraphrase-multilingual-MiniLM-L12-v2` via `sentence-transformers`. |
@@ -110,7 +110,7 @@ pip install -r requirements.txt
 ```
 
 ### 2. Generate the Dataset
-Generate the 5,500+ message synthetic Hinglish corpus and the 40-query ground truth evaluation set.
+Generate the 5,770-message synthetic Hinglish corpus (5,764 unique texts, 99.9% diversity) and the 40-query ground truth evaluation set.
 ```bash
 python scripts/generate_data.py
 ```
@@ -128,6 +128,18 @@ python backend/main.py
 ```
 > **Frontend**: Open [http://localhost:8000](http://localhost:8000) in your browser.
 > **Interactive Swagger API Docs**: Open [http://localhost:8000/docs](http://localhost:8000/docs) to inspect OpenAPI endpoints (`/search`, `/health`).
+
+#### 🎮 Live Demo & Sample Queries
+Try these realistic queries in the interactive web interface across the de-biased 5,770-message corpus:
+- **Pure Semantic / Zero-Keyword Overlap**:
+  - `internet not working` → retrieves *"wifi band hai no way"*
+  - `who will pay the dinner bill` → retrieves *"main splitwise pe daal dunga"*
+  - `is anyone bringing a car` → retrieves *"gaadi leke kaun aa raha"*
+- **Speaker Attributed Filtering**:
+  - `What did Priya say about the budget?` → filters by `speaker: Priya` and surfaces budget discussions.
+- **Temporal Scope Filtering**:
+  - `What did we discuss yesterday?` → restricts search window to the preceding 24h.
+  - `plans last month` → resolves against August 2026 chat history.
 
 ### 5. Run Automated Unit & Integration Tests
 Execute the full pytest suite covering entity parsing, boolean masks, context expansion, and API endpoints:
