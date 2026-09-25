@@ -205,9 +205,7 @@ YapSearch/
 │   └── embeddings_context.npy # 384-d context-injected vectors
 ├── pyproject.toml             # Project build configuration & pytest options
 ├── requirements.txt           # Production & development dependencies
-├── LICENSE                    # MIT Open Source License
-├── MASTER_PLAN.md             # System architecture design document
-└── PROGRESS_LOG.md            # Engineering diary & implementation decisions
+└── LICENSE                    # MIT Open Source License
 ```
 
 ---
