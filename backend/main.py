@@ -1,19 +1,21 @@
 import os
+import sys
 import logging
+from pathlib import Path
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
-try:
-    from backend.config import FRONTEND_DIR, MODEL_NAME, REFERENCE_DATE
-    from backend.schemas import SearchRequest, SearchResponse, HealthResponse
-    from backend.search_core import search_core
-except ImportError:
-    from config import FRONTEND_DIR, MODEL_NAME, REFERENCE_DATE
-    from schemas import SearchRequest, SearchResponse, HealthResponse
-    from search_core import search_core
+# Ensure repository root is in sys.path so 'backend.*' imports resolve cleanly
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from backend.config import FRONTEND_DIR, MODEL_NAME, REFERENCE_DATE
+from backend.schemas import SearchRequest, SearchResponse, HealthResponse
+from backend.search_core import search_core
 
 logging.basicConfig(
     level=logging.INFO,

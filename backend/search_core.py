@@ -1,29 +1,27 @@
 import json
 import logging
 import os
+import sys
 import re
 import datetime
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 from dateutil.relativedelta import relativedelta
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-try:
-    from backend.bm25 import BM25Okapi
-    from backend.config import (
-        PARTICIPANTS, REFERENCE_DATE, MODEL_NAME,
-        MESSAGES_PATH, EMBEDDINGS_RAW_PATH, EMBEDDINGS_CONTEXT_PATH,
-        DEFAULT_TOP_K, CONTEXT_EXPANSION_WINDOW, RAW_WEIGHT, CONTEXT_WEIGHT,
-        BM25_K1, BM25_B, RRF_K, RRF_TOP_N, WEIGHT_DENSE, WEIGHT_BM25
-    )
-except ImportError:
-    from bm25 import BM25Okapi
-    from config import (
-        PARTICIPANTS, REFERENCE_DATE, MODEL_NAME,
-        MESSAGES_PATH, EMBEDDINGS_RAW_PATH, EMBEDDINGS_CONTEXT_PATH,
-        DEFAULT_TOP_K, CONTEXT_EXPANSION_WINDOW, RAW_WEIGHT, CONTEXT_WEIGHT,
-        BM25_K1, BM25_B, RRF_K, RRF_TOP_N, WEIGHT_DENSE, WEIGHT_BM25
-    )
+# Ensure repository root is in sys.path so 'backend.*' imports resolve cleanly
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from backend.bm25 import BM25Okapi
+from backend.config import (
+    PARTICIPANTS, REFERENCE_DATE, MODEL_NAME,
+    MESSAGES_PATH, EMBEDDINGS_RAW_PATH, EMBEDDINGS_CONTEXT_PATH,
+    DEFAULT_TOP_K, CONTEXT_EXPANSION_WINDOW, RAW_WEIGHT, CONTEXT_WEIGHT,
+    BM25_K1, BM25_B, RRF_K, RRF_TOP_N, WEIGHT_DENSE, WEIGHT_BM25
+)
 
 logger = logging.getLogger("yapsearch.core")
 
@@ -212,9 +210,14 @@ class SearchCore:
         norms_raw[norms_raw == 0] = 1e-10
         sim_raw = np.dot(valid_raw, q_emb) / norms_raw
 
-        # Z-score normalize raw
-        sim_raw_std = np.std(sim_raw) or 1e-10
-        sim_raw_z = (sim_raw - np.mean(sim_raw)) / sim_raw_std
+        # Z-score normalize raw (only if there is variance signal)
+        sim_raw_std = float(np.std(sim_raw))
+        if sim_raw_std < 1e-6:
+            sim_raw_z = np.zeros_like(sim_raw)
+            dense_has_signal = False
+        else:
+            sim_raw_z = (sim_raw - np.mean(sim_raw)) / sim_raw_std
+            dense_has_signal = True
 
         # 2. Contextual embeddings similarity
         valid_context = self.embeddings_context[valid_indices]
@@ -223,8 +226,11 @@ class SearchCore:
         sim_context = np.dot(valid_context, q_emb) / norms_context
 
         # Z-score normalize context
-        sim_context_std = np.std(sim_context) or 1e-10
-        sim_context_z = (sim_context - np.mean(sim_context)) / sim_context_std
+        sim_context_std = float(np.std(sim_context))
+        if sim_context_std < 1e-6:
+            sim_context_z = np.zeros_like(sim_context)
+        else:
+            sim_context_z = (sim_context - np.mean(sim_context)) / sim_context_std
 
         # 3. Hybrid score for ranking (internal Z-score blend)
         hybrid_z = (RAW_WEIGHT * sim_raw_z) + (CONTEXT_WEIGHT * sim_context_z)
@@ -244,9 +250,10 @@ class SearchCore:
         # 6. Reciprocal Rank Fusion (RRF)
         rrf_scores: Dict[int, float] = {}
 
-        # Dense semantic rankings (1-based rank)
-        for rank, local_idx in enumerate(top_dense_local, start=1):
-            rrf_scores[local_idx] = rrf_scores.get(local_idx, 0.0) + (WEIGHT_DENSE / (RRF_K + rank))
+        # Dense semantic rankings (1-based rank) - only applied if dense embeddings provide distinguishing signal
+        if dense_has_signal:
+            for rank, local_idx in enumerate(top_dense_local, start=1):
+                rrf_scores[local_idx] = rrf_scores.get(local_idx, 0.0) + (WEIGHT_DENSE / (RRF_K + rank))
 
         # BM25 lexical rankings (only items with positive lexical match)
         for rank, local_idx in enumerate(top_bm25_local, start=1):
@@ -254,8 +261,11 @@ class SearchCore:
                 rrf_scores[local_idx] = rrf_scores.get(local_idx, 0.0) + (WEIGHT_BM25 / (RRF_K + rank))
 
         # Sort merged candidates by RRF score descending
-        sorted_candidates = sorted(rrf_scores.keys(), key=lambda idx: rrf_scores[idx], reverse=True)
-        top_local_indices = sorted_candidates[:min(top_k, len(sorted_candidates))]
+        if rrf_scores:
+            sorted_candidates = sorted(rrf_scores.keys(), key=lambda idx: rrf_scores[idx], reverse=True)
+            top_local_indices = sorted_candidates[:min(top_k, len(sorted_candidates))]
+        else:
+            top_local_indices = list(range(min(top_k, len(valid_indices))))
 
         results = []
         for local_idx in top_local_indices:
