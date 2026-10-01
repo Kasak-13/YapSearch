@@ -37,12 +37,28 @@ class SearchCore:
       - Dialogue context expansion (+/- 3 messages)
     """
 
+    FILLER_WORDS = {
+        'bhai', 'yaar', 'arre', 'suno', 'bro', 'waise', 'dekh', 'haan', 'acha',
+        'sachi', 'oye', 'abe', 'listen', 'guys', 'seriously', 'fr', 'lol', 'lmao',
+        'rn', 'please', 'jaldi', 'pakka', 'na', 'batao', 'mai', 'mera', 'meri',
+        'hai', 'hain', 'ka', 'ke', 'ki', 'ko', 'se', 'me', 'pe', 'toh', 'hi',
+        'yep', 'ok', 'okay', 'hmmm', 'hmm'
+    }
+
+    @staticmethod
+    def _count_content_words(text: str) -> int:
+        t = re.sub(r'[^\w\s]', ' ', text.lower())
+        words = [w for w in t.split() if w not in SearchCore.FILLER_WORDS and len(w) > 1]
+        return len(words)
+
     def __init__(self):
         self.messages: List[Dict[str, Any]] = []
         self.embeddings_raw: Optional[np.ndarray] = None
         self.embeddings_context: Optional[np.ndarray] = None
         self.bm25: Optional[BM25Okapi] = None
         self.model: Optional[SentenceTransformer] = None
+        self.content_word_counts: Optional[np.ndarray] = None
+        self.word_lengths: Optional[np.ndarray] = None
         self._is_loaded: bool = False
 
     def load_data(self) -> None:
@@ -64,6 +80,10 @@ class SearchCore:
         logger.info("Initializing in-memory BM25Okapi lexical index on full corpus...")
         corpus_texts = [msg["text"] for msg in self.messages]
         self.bm25 = BM25Okapi(corpus_texts, k1=BM25_K1, b=BM25_B)
+
+        logger.info("Precomputing content substance vectors...")
+        self.content_word_counts = np.array([self._count_content_words(m["text"]) for m in self.messages])
+        self.word_lengths = np.array([len(m["text"].split()) for m in self.messages])
 
         self._is_loaded = True
         logger.info(f"YapSearch ready: {len(self.messages)} messages indexed.")
@@ -235,9 +255,17 @@ class SearchCore:
         # 3. Hybrid score for ranking (internal Z-score blend)
         hybrid_z = (RAW_WEIGHT * sim_raw_z) + (CONTEXT_WEIGHT * sim_context_z)
 
-        # 4. Raw blended cosine similarity for user display [0.0, 1.0]
-        hybrid_raw = (RAW_WEIGHT * sim_raw) + (CONTEXT_WEIGHT * sim_context)
-        display_scores = np.clip(hybrid_raw, 0.0, 1.0)
+        # Micro-reaction adjustment: penalize empty banter (<= 1 content words or <= 3 total words)
+        # to prevent anisotropic hub vectors from burying substantive discussion turns
+        if self.content_word_counts is not None and self.word_lengths is not None:
+            counts = self.content_word_counts[valid_indices]
+            lens = self.word_lengths[valid_indices]
+            substance_penalty = np.where((counts <= 1) | (lens <= 3), 1.5, 0.0)
+            substance_boost = np.where((counts >= 3) & (lens >= 4), 0.5, 0.0)
+            hybrid_z = hybrid_z - substance_penalty + substance_boost
+
+        # 4. Display score: reflects best semantic confidence between raw message and conversational context [0.0, 1.0]
+        display_scores = np.clip(np.maximum(sim_raw, sim_context), 0.0, 1.0)
 
         # 4. In-memory BM25 Lexical Scoring (computed using global corpus IDF, applied over valid candidates)
         bm25_scores = self.bm25.score_candidates(semantic_query, valid_indices)

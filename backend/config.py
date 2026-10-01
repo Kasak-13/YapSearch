@@ -28,8 +28,8 @@ MODEL_NAME = os.getenv("MODEL_NAME", "paraphrase-multilingual-MiniLM-L12-v2")
 # Search Settings
 DEFAULT_TOP_K = 5
 CONTEXT_EXPANSION_WINDOW = 3  # +/- 3 messages
-RAW_WEIGHT = 0.6
-CONTEXT_WEIGHT = 0.4
+RAW_WEIGHT = 0.3
+CONTEXT_WEIGHT = 0.7
 
 # Hybrid Lexical (BM25) & Reciprocal Rank Fusion (RRF) Settings
 BM25_K1 = 1.5
